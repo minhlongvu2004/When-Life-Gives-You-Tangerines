@@ -40,3 +40,12 @@ def test_shock_month_effect(profiles):
     assert list(e.columns) == ["official", "realistic_m1", "realistic_m7"]
     assert len(e) == 4500
     assert e.realistic_m1.median() < e.realistic_m7.median()
+
+
+def test_example_accounts_are_typical(profiles):
+    from resilience.insights import example_accounts
+    ex = example_accounts(profiles, shock_month_effect(profiles))
+    assert len(ex) == 3
+    sel = profiles.loc[ex]
+    assert (sel.F > 0).all()
+    assert sel.I.between(profiles.I.quantile(0.25), profiles.I.quantile(0.75)).all()

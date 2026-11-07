@@ -60,3 +60,29 @@ def test_buffer_gone():
 def test_default_target_runway():
     assert backup_plan(BASE, Shock(job_loss=True, ei_months=6)).target_runway == 9
     assert backup_plan(BASE, Shock(bills_pct=0.2)).target_runway == 6
+
+
+def test_goal_uses_spending_when_no_fixed_costs():
+    g = goal_plan({**BASE, "F": 0.0}, months_target=3)
+    assert g.target == 3 * BASE["S"] and g.basis == "spending"
+    assert goal_plan(BASE).basis == "fixed costs"
+
+
+def test_backup_realistic_reaches_realistic_target():
+    from resilience.realistic import simulate
+    p = {**BASE, "B": 8000.0, "pension": 0.0, "loan_end": None,
+         **{f"sin_{m}": 1.0 for m in range(1, 13)},
+         **{f"sout_{m}": (2.0 if m == 1 else 1.0) for m in range(1, 13)}}
+    s = Shock(job_loss=True, start_month=12)
+    b = backup_plan(p, s, realistic=True)
+    assert b.enough
+    after = simulate(p, replace(s, extra_monthly=-b.total_cut)).runway
+    assert after >= b.target_runway and b.runway_after == after
+    assert b.required_cut > backup_plan(p, s).required_cut  # stricter than the official formula
+
+
+def test_backup_realistic_not_enough():
+    p = {**BASE, "B": 100.0, "D_transfers": 0.0, "D_cash": 10.0, "D_card": 0.0, "pension": 0.0,
+         "loan_end": None, **{f"sin_{m}": 1.0 for m in range(1, 13)}, **{f"sout_{m}": 1.0 for m in range(1, 13)}}
+    b = backup_plan(p, Shock(job_loss=True), realistic=True)
+    assert b.enough is False and b.shortfall > 0 and b.next_steps

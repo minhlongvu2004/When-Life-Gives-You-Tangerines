@@ -73,3 +73,12 @@ def population_flags(profiles: pd.DataFrame) -> dict:
         "pension_dominant_share": float((profiles.pension_share > 0.5).mean()),
         "ei_cap_binding_share": float((0.55 * non_pension > EI_MONTHLY_CAP).mean()),
     }
+
+
+def example_accounts(profiles: pd.DataFrame, effect: pd.DataFrame, n: int = 3) -> list[int]:
+    """Typical customers whose January realistic runway falls furthest below the official one."""
+    lo, hi = profiles.I.quantile([0.25, 0.75])
+    typical = profiles[(profiles.F > 0) & profiles.I.between(lo, hi)].index
+    e = effect.loc[effect.index.intersection(typical)]
+    e = e[e.official.between(6, 12)]
+    return [int(a) for a in (e.official - e.realistic_m1).sort_values(ascending=False).head(n).index]
