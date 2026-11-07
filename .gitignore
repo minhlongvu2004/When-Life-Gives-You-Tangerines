@@ -20,3 +20,4 @@ Thumbs.db
 # Engine cache and test artifacts
 cache/
 .pytest_cache/
+.superpowers/
