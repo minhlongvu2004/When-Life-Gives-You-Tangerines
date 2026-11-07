@@ -38,7 +38,7 @@ export function Finding() {
   const hi = f.byFifthWorkers[4];
 
   return (
-    <div className="flex min-h-[calc(100vh-140px)] flex-col justify-center gap-6 pb-4">
+    <div className="flex flex-col justify-center gap-6 pb-2">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center">
         <div className="text-sm font-medium text-accent-ink">Our biggest finding</div>
         <h1 className="mx-auto mt-2 text-3xl font-semibold tracking-tighter sm:text-[2.4rem] sm:leading-tight">The more you earn, the fewer months you survive.</h1>

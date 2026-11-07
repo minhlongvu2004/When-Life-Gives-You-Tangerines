@@ -87,9 +87,9 @@ export function Engine() {
     : "";
 
   return (
-    <div className="pt-2">
+    <div>
       {/* customer pill + stepper */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-1.5 pl-4 shadow-sm">
           <span className="text-sm">
             <span className="tnum font-semibold">#{m.id}</span>
@@ -131,7 +131,7 @@ export function Engine() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="flex min-h-[calc(100vh-220px)] flex-col justify-center pb-6"
+          className="flex flex-col justify-center pb-2"
         >
           {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} />}
           {step === 1 && <StepShock m={m} mode={mode} setMode={setMode} shock={shock} setShock={setShock} all={all} onNext={() => setStep(2)} />}
@@ -167,7 +167,7 @@ function Landing({
     onOpen(n);
   };
   return (
-    <div className="flex min-h-[78vh] flex-col items-center justify-center text-center">
+    <div className="flex flex-col items-center justify-center py-6 text-center">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-2xl">
         <div className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs font-medium text-ink-2">
           <span className="size-1.5 rounded-full bg-accent" /> 4,500 real bank customers · 1 million transactions
@@ -225,7 +225,7 @@ function Landing({
           </button>
         </div>
       </motion.div>
-      <Link href="/finding" className="group mt-20 text-sm text-ink-2 hover:text-ink">
+      <Link href="/finding" className="group mt-12 text-sm text-ink-2 hover:text-ink">
         <span className="font-semibold text-accent-ink">The surprise:</span> the more you earn, the fewer months you survive{" "}
         <ArrowRight className="inline size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
       </Link>
