@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 
 const NAV = [
   { href: "/", label: "Engine" },
-  { href: "/finding", label: "The finding" },
+  { href: "/finding", label: "Finding" },
   { href: "/method", label: "Method" },
 ];
 
-export function TangerineMark({ size = 28 }: { size?: number }) {
+export function TangerineMark({ size = 26 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden>
       <circle cx="16" cy="18" r="12" fill="var(--series-2)" />
@@ -23,22 +23,20 @@ export function TangerineMark({ size = 28 }: { size?: number }) {
 export function SiteHeader() {
   const path = usePathname();
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-page/85 backdrop-blur">
-      <div className="mx-auto flex max-w-[1280px] items-center gap-4 px-4 py-3 sm:px-6">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+    <header className="sticky top-0 z-40 bg-page/75 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-4 sm:px-6">
+        <Link href="/" className="flex min-w-0 items-center gap-2">
           <TangerineMark />
-          <span className="truncate text-[15px] font-semibold tracking-tight">When Life Gives You Tangerines</span>
+          <span className="hidden truncate text-[15px] font-semibold tracking-tight sm:inline">When Life Gives You Tangerines</span>
         </Link>
-        <nav className="ml-auto flex shrink-0 gap-1 text-sm">
+        <nav className="ml-auto flex gap-1 text-sm">
           {NAV.map((n) => {
             const active = n.href === "/" ? path === "/" : path?.startsWith(n.href);
             return (
               <Link
                 key={n.href}
                 href={n.href}
-                className={`rounded-full px-3 py-1.5 transition-colors ${
-                  active ? "bg-ink text-page" : "text-ink-2 hover:bg-surface-2"
-                }`}
+                className={`rounded-full px-3.5 py-1.5 font-medium transition-colors ${active ? "bg-ink text-page" : "text-ink-2 hover:text-ink"}`}
               >
                 {n.label}
               </Link>

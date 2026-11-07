@@ -16,7 +16,7 @@ A one-click **Realistic mode** applies the real 2026 EI cap ($729/week) and keep
 
 **The more you earn, the fewer months you can survive.** Across 4,500 accounts and 1,056,320 transactions:
 
-- The top-earning fifth keeps **1.8 months** of their own spending as a buffer. The lowest-earning fifth keeps **8.5**. Buffers shrink steadily across every income tenth (9.0 → 1.6 months).
+- The top-earning fifth keeps **1.8 months** of their own spending as a buffer. The lowest-earning fifth keeps **8.9** (working-age customers). Buffers shrink steadily across every income tenth (9.0 → 1.6 months).
 - Under the brief's job-loss twist (EI = 55% of income), **70%** of top earners can't last 6 months, against **4%** of the lowest earners.
 - The brief's rule flatters high earners. Real EI pays 55% **up to $729/week**. With the cap, **99%** of top earners fail, and across all customers the failure rate rises from **35% to 51%**.
 - The pattern holds with pensioners excluded (8.9 → 1.8 months).

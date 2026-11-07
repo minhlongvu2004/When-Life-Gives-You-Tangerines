@@ -11,7 +11,7 @@ Pick any `account_id` and the engine will:
 ## Biggest finding
 
 > **The more you earn, the fewer months you can survive.**
-> The top-earning fifth of customers keeps **1.8 months** of spending in the bank; the lowest-earning fifth keeps **8.5**.
+> The top-earning fifth of customers keeps **1.8 months** of spending in the bank; the lowest-earning fifth keeps **8.9** (working-age customers).
 > Under the brief's job-loss twist (EI = 55% of income), **70%** of top earners can't last 6 months. Apply the real 2026 EI cap ($729/week), and it's **99%**.
 
 Supporting signal (no leakage, pre-loan months only): customers whose income swung the most before borrowing defaulted **6×** as often as the steadiest (23% vs 4%; AUC 0.71).

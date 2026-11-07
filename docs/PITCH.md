@@ -7,7 +7,7 @@ Judging: Discovery 35% · Data Use 25% · Communication 25% · Impact 15%. About
 - [ ] **Well before judging:** `cd app && npm install && npm run build`. This takes about 30 seconds and needs internet only for `npm install`.
 - [ ] **At the table:** `cd app && npm run serve`, then open http://localhost:3000. It loads instantly and needs no internet. Don't use `npm run dev` for judging: its first page load takes about 30 seconds.
 - [ ] Browser zoom at 110–125% so judges can read it. Close other tabs.
-- [ ] Open three tabs: **Engine** (`/?id=52783`), **The finding** (`/finding`) and **Method** (`/method`).
+- [ ] Open two tabs: **Engine** (`/`) and **Finding** (`/finding`). Method (`/method`) is there if a judge asks how you computed something.
 - [ ] Mode toggle on **Judge definitions**.
 
 ---
@@ -20,7 +20,7 @@ Judging: Discovery 35% · Data Use 25% · Communication 25% · Impact 15%. About
 > *(beat)* The low earner lasts **84 months**. The high earner lasts **2.1**.
 >
 > That's not a fluke. It's our biggest finding across all 4,500 accounts: **the more you earn, the fewer months you can survive.**
-> *(switch to The finding tab)* The top-earning fifth keeps 1.8 months of spending in the bank; the lowest keeps 8.5. Under your
+> *(switch to The finding tab)* The top-earning fifth keeps 1.8 months of spending in the bank; the lowest keeps 8.9 (working-age customers). Under your
 > job-loss twist, **70%** of top earners don't make 6 months. And the brief's 55% rule is generous: real EI caps at **$729 a week**. With the cap it's **99%**.
 >
 > So we built **When Life Gives You Tangerines**: know the customer, take any shock, get a plan. Every number matches your
@@ -28,27 +28,29 @@ Judging: Discovery 35% · Data Use 25% · Communication 25% · Impact 15%. About
 
 ## 3-minute live twist: the routine
 
-1. **Type the account_id** in the big box and press Enter. Say: *"Typical month: in **$I**, out **$S**, buffer **$B**, which is **X months** of their own spending. Today's runway: …"*
-2. **Read the twist card into the "Read a twist card" box** and press Enter (or click the matching quick twist). The parser shows what it understood under the box. Check it, and fix any slider if needed.
-3. Point at the **big runway number**. Say: *"Runway drops from A to **B months**."* Then read the **verdict badge** ("Makes it through 6 months" / "Runs out N months early, needs $X more").
-4. Open **Show the math**: *"buffer_left = …, gap = …, B ÷ gap = …"*. This is the trust moment, and it matches the judges' worked answer.
-5. Point at the **Realistic** chip next to it: *"With the real EI cap it's actually R months."* Use this only for higher earners, where the difference is dramatic.
-6. Scroll to **Make a plan**:
-   - **Backup plan:** *"Day 1 file EI, then trim flexible spending 10% (+X months), defer the loan (+Y), survival mode (+Z). With the full plan they [make it / still fall short]."*
-   - **Goal plan:** *"To be ready next time: target $T, save $M a month, fully funded in N months."*
-7. Close with the population line under the chart: *"Under this twist, P% of all customers run out within 6 months. This customer outlasts Q% of them."*
+The app walks you through three steps: **1 Customer → 2 Shock → 3 Plan**. Say one sentence per screen.
+
+1. **Type the account_id** on the home screen and press Enter.
+   Read the headline, for example *"Saving $482 a month… but their savings cover only 0.9 months of spending."*
+2. Click **Hit them with a shock**. **Type the twist card** into the bar at the top and press Enter, or tap the matching scenario card.
+   Read the headline aloud, for example *"They run out of money in month 3, 3.9 months short."*
+3. If a judge wants proof, open **See the math**. It shows the judges' formula with this customer's numbers in it. For a layoff, tap the **With the real EI cap** chip to show the realistic number.
+4. Click **Make a plan**. Read the two big numbers:
+   - Left (*if it hits*): *"Runway goes from 2.1 to 3.9 months with these three moves."*
+   - Right (*get ready*): *"Save $2.0K a month and they're fully ready in 19 months."*
+5. Click the **×** on the customer pill to load the next one.
 
 ### Twist cheat sheet
 
 | Twist card says | Do this |
 | :-- | :-- |
-| "Laid off, EI 55% for 6 months" | Quick twist **Laid off · EI 55%** (sets income 55%, 6 months) |
-| "Furnace dies, costs a month of spending" | Quick twist **Furnace dies** (one-off = 1 × S) |
-| "Job loss + bills up 15%" | Quick twist **Laid off + bills +15%** |
-| "Rent goes up $400" | Slider **Other extra monthly cost** = 400 |
-| "Repair costs $5,000" | Slider **Surprise one-off cost ($)** = 5,000 |
+| "Laid off, EI 55% for 6 months" | Card **Laid off** (income 55%, 6 months) |
+| "Furnace dies, costs a month of spending" | Card **Furnace dies** (one-off = 1 × S) |
+| "Job loss + bills up 15%" | Card **Laid off + bills up** |
+| "Rent goes up $400" | Type it, or **Adjust the shock by hand → Extra monthly cost** = 400 |
+| "Repair costs $5,000" | Type it, or **Adjust the shock by hand → One-off cost ($)** = 5,000 |
 | "EI at 50% for 9 months" | Type the card into the box (sets 50% and 9 months) |
-| Something odd | Sliders. Every input is one drag away |
+| Something odd | **Adjust the shock by hand**. Every input is one slider |
 
 **Runway edge cases to say out loud:** if the buffer goes to 0 or below after a one-off, runway = **0** (they can't absorb it). If income still covers spending, it's **"no shortfall (120+)"**.
 
