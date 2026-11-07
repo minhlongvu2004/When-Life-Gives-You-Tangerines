@@ -1,18 +1,6 @@
 "use client";
 
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceArea,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { MonthRow } from "@/lib/data";
 import { money } from "@/lib/engine";
 import { LegendKey } from "./ui";
@@ -54,7 +42,7 @@ export function InOutChart({ rows }: { rows: MonthRow[] }) {
           <LegendKey color="var(--series-2)" label="Money out" />
         </div>
       </div>
-      <div className="h-52">
+      <div className="h-40">
         <ResponsiveContainer>
           <LineChart data={rows} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--grid)" />
@@ -74,8 +62,22 @@ export function InOutChart({ rows }: { rows: MonthRow[] }) {
                 ) : null
               }
             />
-            <Line type="monotone" dataKey="money_in" stroke="var(--series-1)" strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }} />
-            <Line type="monotone" dataKey="money_out" stroke="var(--series-2)" strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }} />
+            <Line
+              type="monotone"
+              dataKey="money_in"
+              stroke="var(--series-1)"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
+            />
+            <Line
+              type="monotone"
+              dataKey="money_out"
+              stroke="var(--series-2)"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
+            />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -88,10 +90,10 @@ export function BalanceChart({ rows, buffer }: { rows: MonthRow[]; buffer: numbe
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-sm font-medium">Average daily balance</div>
-        <span className="text-xs text-muted">Shaded: last 6 months → buffer B = {money(buffer)}</span>
+        <div className="text-sm font-medium">Savings over time</div>
+        <span className="text-xs text-muted">dashed = savings B ({money(buffer)}, last 6 mo)</span>
       </div>
-      <div className="h-52">
+      <div className="h-40">
         <ResponsiveContainer>
           <AreaChart data={rows} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
             <defs>
@@ -103,9 +105,7 @@ export function BalanceChart({ rows, buffer }: { rows: MonthRow[]; buffer: numbe
             <CartesianGrid vertical={false} stroke="var(--grid)" />
             <XAxis dataKey="month" tickFormatter={monthLabel} {...axis} minTickGap={28} />
             <YAxis tickFormatter={compact} {...axis} axisLine={false} width={52} />
-            {last6.length > 0 && (
-              <ReferenceArea x1={last6[0].month} x2={last6[last6.length - 1].month} fill="var(--accent)" fillOpacity={0.08} stroke="none" />
-            )}
+            {last6.length > 0 && <ReferenceArea x1={last6[0].month} x2={last6[last6.length - 1].month} fill="var(--accent)" fillOpacity={0.08} stroke="none" />}
             <ReferenceLine y={buffer} stroke="var(--accent)" strokeDasharray="4 4" strokeWidth={1.5} />
             <ReferenceLine y={0} stroke="var(--axis)" />
             <Tooltip
@@ -123,7 +123,14 @@ export function BalanceChart({ rows, buffer }: { rows: MonthRow[]; buffer: numbe
                 ) : null
               }
             />
-            <Area type="monotone" dataKey="avg_daily_balance" stroke="var(--series-1)" strokeWidth={2} fill="url(#balFill)" activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }} />
+            <Area
+              type="monotone"
+              dataKey="avg_daily_balance"
+              stroke="var(--series-1)"
+              strokeWidth={2}
+              fill="url(#balFill)"
+              activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -161,9 +168,19 @@ export function DepletionChart({
             {hasShock && <ReferenceArea x1={0} x2={Math.min(duration, data.length - 1)} fill="var(--series-2)" fillOpacity={0.06} stroke="none" />}
             <XAxis dataKey="month" {...axis} tickFormatter={(m) => (m === 0 ? "Now" : `M${m}`)} interval="preserveStartEnd" minTickGap={14} />
             <YAxis tickFormatter={compact} {...axis} axisLine={false} width={56} />
-            <ReferenceLine y={0} stroke="var(--critical)" strokeWidth={1.5} label={{ value: "Broke", position: "insideBottomLeft", fill: "var(--critical-text)", fontSize: 11 }} />
+            <ReferenceLine
+              y={0}
+              stroke="var(--critical)"
+              strokeWidth={1.5}
+              label={{ value: "Broke", position: "insideBottomLeft", fill: "var(--critical-text)", fontSize: 11 }}
+            />
             {hasShock && runway !== null && runway > 0 && runway <= data.length - 1 && (
-              <ReferenceLine x={Math.round(runway)} stroke="var(--series-2)" strokeDasharray="3 3" label={{ value: `runs out ≈ M${runway}`, position: "top", fill: "var(--ink-2)", fontSize: 11 }} />
+              <ReferenceLine
+                x={Math.round(runway)}
+                stroke="var(--series-2)"
+                strokeDasharray="3 3"
+                label={{ value: `runs out ≈ M${runway}`, position: "top", fill: "var(--ink-2)", fontSize: 11 }}
+              />
             )}
             <Tooltip
               cursor={{ stroke: "var(--axis)" }}
@@ -183,7 +200,15 @@ export function DepletionChart({
             <Line type="monotone" dataKey="baseline" stroke="var(--series-1)" strokeWidth={2} dot={false} isAnimationActive={false} />
             {withPlan && <Line type="monotone" dataKey="plan" stroke="var(--good)" strokeWidth={2} dot={false} isAnimationActive={false} />}
             {hasShock && (
-              <Line type="monotone" dataKey="balance" stroke="var(--series-2)" strokeWidth={2.5} dot={false} isAnimationActive={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }} />
+              <Line
+                type="monotone"
+                dataKey="balance"
+                stroke="var(--series-2)"
+                strokeWidth={2.5}
+                dot={false}
+                isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--surface)" }}
+              />
             )}
           </LineChart>
         </ResponsiveContainer>

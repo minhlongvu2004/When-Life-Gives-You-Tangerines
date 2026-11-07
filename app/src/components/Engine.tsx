@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Search, Shuffle, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { loadDetail, loadFindings, loadMetrics, usePromise, type AccountDetail } from "@/lib/data";
+import { loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
 import { StepCustomer, StepPlan, StepShock, type Peers } from "./guided";
 
@@ -56,6 +56,7 @@ export function Engine() {
   }, [id]);
 
   const m = id !== null ? metrics?.get(id) : undefined;
+  const rows = useMemo(() => (detail ? monthRows(detail) : []), [detail]);
 
   const peers: Peers | null = useMemo(() => {
     if (!m || !sortedI.length) return null;
@@ -132,7 +133,7 @@ export function Engine() {
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="flex min-h-[calc(100vh-220px)] flex-col justify-center pb-6"
         >
-          {step === 0 && <StepCustomer m={m} peers={peers} mode={mode} onNext={() => setStep(1)} />}
+          {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} />}
           {step === 1 && <StepShock m={m} mode={mode} setMode={setMode} shock={shock} setShock={setShock} all={all} onNext={() => setStep(2)} />}
           {step === 2 && <StepPlan m={m} mode={mode} shock={shock} onRestart={close} />}
         </motion.div>

@@ -16,20 +16,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  backupPlan,
-  formatRunway,
-  goalPlan,
-  money,
-  NO_SHOCK,
-  pct,
-  scenario,
-  verdict,
-  type Metrics,
-  type Mode,
-  type Shock,
-} from "@/lib/engine";
+import { backupPlan, formatRunway, goalPlan, money, NO_SHOCK, pct, scenario, verdict, type Metrics, type Mode, type Shock } from "@/lib/engine";
 import { parseTwist } from "@/lib/twist";
+import type { MonthRow } from "@/lib/data";
+import { BalanceChart, InOutChart } from "./charts";
 import { Slider, Toggle } from "./ui";
 
 /* ------------------------------------------------------------------ helpers */
@@ -47,6 +37,7 @@ const k = (x: number) => {
 };
 const months = (r: number | null) => (r === null ? "120+" : formatRunway(r));
 
+const GOAL_MONTHS = 6;
 type Tone = "good" | "warning" | "critical";
 const toneOf = (r: number | null, target = 6): Tone => (r === null || r >= target ? "good" : r >= 3 ? "warning" : "critical");
 const TONE = {
@@ -83,57 +74,63 @@ const isShock = (s: Shock) => shockLabel(s) !== "";
 
 /* ------------------------------------------------------------------ primitives */
 
-export function RunwayRing({ runway, size = 210, caption }: { runway: number | null; size?: number; caption?: string }) {
+/** Ring = progress toward a 6-month safety cushion (the length of a typical EI claim). */
+export function RunwayRing({
+  runway,
+  size = 200,
+  caption,
+  label,
+}: {
+  runway: number | null; // months; null = no shortfall (120+)
+  size?: number;
+  caption?: string;
+  label?: string;
+}) {
   const tone = toneOf(runway);
   const t = TONE[tone];
   const stroke = size < 160 ? 10 : 14;
   const numCls = size < 160 ? "text-4xl" : size < 200 ? "text-5xl" : "text-6xl";
   const r = (size - stroke) / 2;
   const C = 2 * Math.PI * r;
-  const frac = runway === null ? 1 : Math.min(runway, 12) / 12;
+  const frac = runway === null ? 1 : Math.min(Math.max(runway, 0), GOAL_MONTHS) / GOAL_MONTHS;
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--grid)" strokeWidth={stroke} />
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={t.ring}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={C}
-          initial={{ strokeDashoffset: C }}
-          animate={{ strokeDashoffset: C * (1 - frac) }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-        />
-        {/* 6-month mark */}
-        <line
-          x1={size - stroke * 1.6}
-          y1={size / 2}
-          x2={size - 2}
-          y2={size / 2}
-          stroke="var(--ink-2)"
-          strokeWidth={2}
-          transform={`rotate(180 ${size / 2} ${size / 2})`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <motion.div
-          key={months(runway)}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          className={`tnum font-semibold tracking-tighter ${numCls}`}
-        >
-          {months(runway)}
-        </motion.div>
-        <div className="mt-0.5 text-sm text-ink-2">{runway === null ? "months · no shortfall" : "months of runway"}</div>
-        <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${t.soft} ${t.text}`}>
-          <t.Icon className="size-3.5" aria-hidden /> {caption ?? t.word}
+    <div className="flex flex-col items-center">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--grid)" strokeWidth={stroke} />
+          <motion.circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={t.ring}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={C}
+            initial={{ strokeDashoffset: C }}
+            animate={{ strokeDashoffset: C * (1 - frac) }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <motion.div
+            key={months(runway)}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className={`tnum font-semibold tracking-tighter ${numCls}`}
+          >
+            {months(runway)}
+          </motion.div>
+          <div className={`mt-0.5 max-w-[70%] leading-tight text-ink-2 ${size < 160 ? "text-xs" : "text-sm"}`}>
+            {label ?? (runway === null ? "months · no shortfall" : "months of runway")}
+          </div>
+          <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${t.soft} ${t.text}`}>
+            <t.Icon className="size-3.5" aria-hidden /> {caption ?? t.word}
+          </div>
         </div>
       </div>
+      <div className="mt-2 text-xs whitespace-nowrap text-muted">Full ring = {GOAL_MONTHS}-month safety cushion</div>
     </div>
   );
 }
@@ -234,7 +231,7 @@ function NextButton({ onClick, children }: { onClick: () => void; children: Reac
 
 /* ------------------------------------------------------------------ step 1 */
 
-export function StepCustomer({ m, peers, mode, onNext }: { m: Metrics; peers: Peers | null; mode: Mode; onNext: () => void }) {
+export function StepCustomer({ m, rows, peers, mode, onNext }: { m: Metrics; rows: MonthRow[]; peers: Peers | null; mode: Mode; onNext: () => void }) {
   const base = scenario(m, NO_SHOCK, mode);
   const bufMonths = m.S > 0 ? m.B / m.S : 0;
   const surplus = m.I - m.S;
@@ -243,7 +240,9 @@ export function StepCustomer({ m, peers, mode, onNext }: { m: Metrics; peers: Pe
       ? "Already out of savings."
       : base.runway === null
         ? surplus > 0
-          ? `Saving ${k(surplus)} a month.`
+          ? bufMonths < 3
+            ? `Saving ${k(surplus)} a month, on a thin cushion.`
+            : `Saving ${k(surplus)} a month.`
           : "Breaking even every month."
         : `Spending ${k(base.gap)} more than they earn, every month.`;
   const story =
@@ -252,30 +251,49 @@ export function StepCustomer({ m, peers, mode, onNext }: { m: Metrics; peers: Pe
       : `At this pace their ${k(m.B)} of savings lasts ${months(base.runway)} months.`;
 
   return (
-    <div className="grid items-center gap-10 md:grid-cols-[auto_1fr]">
-      <div className="mx-auto">
-        <RunwayRing runway={base.runway} caption={base.runway === null ? "Healthy today" : undefined} />
-      </div>
-      <div>
-        <div className="text-sm font-medium text-accent-ink">Today, with no shock</div>
-        <h2 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">{headline}</h2>
-        <p className="mt-3 text-lg text-ink-2">{story}</p>
-        {peers && (
-          <p className="mt-2 text-ink-2">
-            Similar earners keep <b className="text-ink">{peers.fifthMedianBufferMonths.toFixed(1)} months</b> saved. This customer keeps{" "}
-            <b className="text-ink">{bufMonths.toFixed(1)}</b>.
-          </p>
-        )}
-        <div className="mt-6 grid grid-cols-2 gap-4 rounded-2xl border border-line bg-surface/70 px-4 py-5 sm:grid-cols-4">
-          <Kpi label="Money in" value={k(m.I)} sub="per month" />
-          <Kpi label="Fixed costs" value={k(m.F)} sub={`bills ${k(m.H)} · loan ${k(m.P)}`} />
-          <Kpi label="Money out" value={k(m.S)} sub="per month" />
-          <Kpi label="Savings" value={k(m.B)} sub={`${bufMonths.toFixed(1)} months`} />
+    <div className="space-y-6">
+      <div className="grid items-center gap-10 md:grid-cols-[auto_1fr]">
+        <div className="mx-auto">
+          <RunwayRing
+            runway={Math.round(bufMonths * 10) / 10}
+            size={180}
+            label="months of spending saved"
+            caption={bufMonths >= 6 ? "Well cushioned" : bufMonths >= 3 ? "Thin cushion" : "Very thin cushion"}
+          />
         </div>
-        <div className="mt-6">
-          <NextButton onClick={onNext}>Hit them with a shock</NextButton>
+        <div>
+          <div className="text-sm font-medium text-accent-ink">Today, with no shock</div>
+          <h2 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">{headline}</h2>
+          <p className="mt-3 text-lg text-ink-2">{story}</p>
+          {peers && (
+            <p className="mt-2 text-ink-2">
+              Similar earners keep <b className="text-ink">{peers.fifthMedianBufferMonths.toFixed(1)} months</b> of spending saved.
+            </p>
+          )}
+          <div className="mt-5 grid grid-cols-3 gap-4 rounded-2xl border border-line bg-surface/70 px-4 py-4 sm:grid-cols-5">
+            <Kpi label="Money in" value={k(m.I)} sub="per month" />
+            <Kpi label="Fixed costs" value={k(m.F)} sub={`bills ${k(m.H)} · loan ${k(m.P)}`} />
+            <Kpi label="Money out" value={k(m.S)} sub="per month" />
+            <Kpi label="Savings" value={k(m.B)} sub="avg, last 6 mo" />
+            <Kpi
+              label="Runway"
+              value={base.runway === null ? "120+" : `${months(base.runway)} mo`}
+              sub={base.runway === null ? "no shortfall" : "at this pace"}
+            />
+          </div>
+          <div className="mt-5">
+            <NextButton onClick={onNext}>Hit them with a shock</NextButton>
+          </div>
         </div>
       </div>
+      {rows.length > 0 ? (
+        <div className="grid gap-5 rounded-3xl border border-line bg-surface p-5 shadow-sm md:grid-cols-2">
+          <InOutChart rows={rows} />
+          <BalanceChart rows={rows} buffer={m.B} />
+        </div>
+      ) : (
+        <div className="h-56 animate-pulse rounded-3xl bg-surface" />
+      )}
     </div>
   );
 }
@@ -397,9 +415,11 @@ export function StepShock({
           <ShockSliders m={m} shock={shock} setShock={setShock} income={sc.income} />
         </div>
 
-        <div className={`flex flex-col justify-center rounded-3xl border bg-surface p-6 shadow-sm ${has ? "border-accent/40 ring-4 ring-accent-soft" : "border-line"}`}>
+        <div
+          className={`flex flex-col justify-center rounded-3xl border bg-surface p-6 shadow-sm ${has ? "border-accent/40 ring-4 ring-accent-soft" : "border-line"}`}
+        >
           <div className="flex items-center gap-6">
-            <RunwayRing runway={sc.runway} size={180} caption={has ? (v.survives ? "Makes it" : v.wipedOut ? "Wiped out" : "Runs out") : undefined} />
+            <RunwayRing runway={sc.runway} size={170} caption={has ? (v.survives ? "Makes it" : v.wipedOut ? "Wiped out" : "Runs out") : undefined} />
             <div className="min-w-0">
               {has && (
                 <div className="text-sm font-medium text-accent-ink">
