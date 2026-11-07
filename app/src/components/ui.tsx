@@ -111,7 +111,7 @@ export function Slider({
   const fill = ((value - min) / (max - min)) * 100;
   return (
     <label className="block">
-      <div className="mb-1.5 flex items-baseline justify-between gap-3 text-sm">
+      <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
         <span className="text-ink-2">{label}</span>
         <span className="tnum font-semibold">{display}</span>
       </div>

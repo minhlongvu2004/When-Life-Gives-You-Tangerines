@@ -16,7 +16,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen antialiased">
         <SiteHeader />
-        <main className="mx-auto max-w-5xl px-4 pb-20 sm:px-6">{children}</main>
+        <main className="mx-auto max-w-5xl px-4 pb-4 sm:px-6">{children}</main>
       </body>
     </html>
   );

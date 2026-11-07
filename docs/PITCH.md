@@ -47,8 +47,8 @@ The app walks you through three steps: **1 Customer → 2 Shock → 3 Plan**. Sa
 | "Laid off, EI 55% for 6 months" | Card **Laid off** (income 55%, 6 months) |
 | "Furnace dies, costs a month of spending" | Card **Furnace dies** (one-off = 1 × S) |
 | "Job loss + bills up 15%" | Card **Laid off + bills up** |
-| "Rent goes up $400" | Type it, or **Adjust → Extra monthly cost** = 400 |
-| "Repair costs $5,000" | Type it, or **Adjust → One-off cost ($)** = 5,000 |
+| "Rent goes up $400" | Type it, or **Adjust → Extra per month** = 400 |
+| "Repair costs $5,000" | Type it, or **Adjust → One-off ($)** = 5,000 |
 | "EI at 50% for 9 months" | Type the card into the box (sets 50% and 9 months) |
 | Something odd | **Adjust**. Every input is one slider |
 

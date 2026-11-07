@@ -187,7 +187,7 @@ export function SheetButton({ label, icon, title, children, wide }: { label: str
         {open && (
           <>
             <motion.div
-              className="fixed inset-0 z-50 bg-black/25 backdrop-blur-[2px]"
+              className="fixed inset-0 z-50 bg-black/10"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -335,6 +335,7 @@ export function StepShock({
 }) {
   const [text, setText] = useState("");
   const [heard, setHeard] = useState<string[]>([]);
+  const [adjust, setAdjust] = useState(false);
   const base = scenario(m, NO_SHOCK, mode);
   const sc = scenario(m, shock, mode);
   const other = scenario(m, shock, mode === "judge" ? "realistic" : "judge");
@@ -425,9 +426,13 @@ export function StepShock({
       </div>
 
       {/* result */}
-      <div className="grid items-center gap-12 pt-2 md:grid-cols-[auto_1fr]">
+      <div className={`grid items-center pt-2 ${adjust ? "gap-8 lg:grid-cols-[auto_minmax(0,1fr)_320px]" : "gap-12 md:grid-cols-[auto_1fr]"}`}>
         <div className="mx-auto">
-          <RunwayRing runway={sc.runway} caption={has ? (v.survives ? "Makes it" : v.wipedOut ? "Wiped out" : "Runs out") : undefined} />
+          <RunwayRing
+            runway={sc.runway}
+            size={adjust ? 180 : 210}
+            caption={has ? (v.survives ? "Makes it" : v.wipedOut ? "Wiped out" : "Runs out") : undefined}
+          />
         </div>
         <div>
           {has && (
@@ -435,7 +440,7 @@ export function StepShock({
               {shockLabel(shock)} · was {months(base.runway)} months
             </div>
           )}
-          <h2 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">{headline}</h2>
+          <h2 className={`mt-1 font-semibold tracking-tight ${adjust ? "text-3xl" : "text-3xl sm:text-4xl"}`}>{headline}</h2>
           <p className="mt-3 text-lg text-ink-2">{sub}</p>
           {has && (
             <p className="mt-2 text-ink-2">
@@ -443,30 +448,52 @@ export function StepShock({
               {shock.durationMonths} months.
             </p>
           )}
-          {has && (
-            <div className="mt-6 flex flex-wrap items-center gap-2.5">
-              <NextButton onClick={onNext}>Make a plan</NextButton>
-              {(shock.jobLoss || mode === "realistic") && (
-                <button
-                  onClick={() => setMode(mode === "judge" ? "realistic" : "judge")}
-                  className="rounded-full border border-line bg-surface/70 px-3.5 py-2 text-sm text-ink-2 hover:border-accent hover:text-ink"
-                  title="Realistic: EI capped at $729/week (2026) and pensions keep paying"
-                >
-                  {mode === "judge" ? "Real EI cap" : "Judges' formula"}: <b className="tnum text-ink">{months(other.runway)}</b> mo
-                </button>
-              )}
+          <div className="mt-6 flex flex-wrap items-center gap-2.5">
+            {has && <NextButton onClick={onNext}>Make a plan</NextButton>}
+            {has && (shock.jobLoss || mode === "realistic") && (
+              <button
+                onClick={() => setMode(mode === "judge" ? "realistic" : "judge")}
+                className="rounded-full border border-line bg-surface/70 px-3.5 py-2 text-sm text-ink-2 hover:border-accent hover:text-ink"
+                title="Realistic: EI capped at $729/week (2026) and pensions keep paying"
+              >
+                {mode === "judge" ? "Real EI cap" : "Judges' formula"}: <b className="tnum text-ink">{months(other.runway)}</b> mo
+              </button>
+            )}
+            <button
+              onClick={() => setAdjust(!adjust)}
+              aria-pressed={adjust}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm transition-colors ${
+                adjust ? "border-accent bg-accent-soft text-accent-ink" : "border-line bg-surface/70 text-ink-2 hover:border-accent hover:text-ink"
+              }`}
+            >
+              <SlidersHorizontal className="size-4" aria-hidden />
+              {adjust ? "Done adjusting" : has ? "Adjust" : "Build your own"}
+            </button>
+            {has && (
               <SheetButton label="Math" icon={<Calculator className="size-4" aria-hidden />} title="The math (judges' formula)">
                 <MathBlock m={m} sc={sc} mode={mode} />
               </SheetButton>
+            )}
+            {has && (
               <SheetButton label="Chart" icon={<LineChartIcon className="size-4" aria-hidden />} title="Savings, month by month" wide>
                 <DepletionChart data={path} duration={shock.durationMonths} runway={sc.runway} hasShock withPlan={false} />
               </SheetButton>
-              <SheetButton label="Adjust" icon={<SlidersHorizontal className="size-4" aria-hidden />} title="Adjust the shock">
-                <ShockSliders m={m} shock={shock} setShock={setShock} income={sc.income} />
-              </SheetButton>
-            </div>
-          )}
+            )}
+          </div>
         </div>
+        <AnimatePresence>
+          {adjust && (
+            <motion.div
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 16 }}
+              transition={{ duration: 0.25 }}
+              className="rounded-3xl border border-line bg-surface p-4 shadow-sm"
+            >
+              <ShockSliders m={m} shock={shock} setShock={setShock} income={sc.income} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -475,12 +502,12 @@ export function StepShock({
 function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock; setShock: (s: Shock) => void; income: number }) {
   const set = (p: Partial<Shock>) => setShock({ ...shock, ...p });
   return (
-    <div className="grid gap-y-6">
+    <div className="grid gap-y-3">
       <div>
         <Toggle
           checked={shock.jobLoss}
           onChange={(on) => set(on ? { jobLoss: true, incomePct: shock.incomePct === 1 ? 0.55 : shock.incomePct } : { jobLoss: false, incomePct: 1 })}
-          label="Job loss (income replaced by EI)"
+          label="Job loss (EI)"
         />
       </div>
       <Slider
@@ -493,7 +520,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={`${Math.round(shock.incomePct * 100)}% · ${money(income)}/mo`}
       />
       <Slider
-        label="Bills / rent increase"
+        label="Bills / rent"
         value={shock.billsPct}
         min={0}
         max={0.5}
@@ -502,7 +529,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={`+${Math.round(shock.billsPct * 100)}% · +${money(shock.billsPct * m.H)}/mo`}
       />
       <Slider
-        label="Extra monthly cost"
+        label="Extra per month"
         value={shock.extraMonthly}
         min={0}
         max={3000}
@@ -511,7 +538,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={`+${money(shock.extraMonthly)}/mo`}
       />
       <Slider
-        label="One-off cost (months of spending)"
+        label="One-off (× spending)"
         value={shock.oneOffMult}
         min={0}
         max={3}
@@ -520,7 +547,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={`${shock.oneOffMult}× · ${money(shock.oneOffMult * m.S)}`}
       />
       <Slider
-        label="One-off cost ($)"
+        label="One-off ($)"
         value={shock.oneOffAbs}
         min={0}
         max={20000}
@@ -529,7 +556,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={money(shock.oneOffAbs)}
       />
       <Slider
-        label="How long it lasts"
+        label="Lasts"
         value={shock.durationMonths}
         min={1}
         max={24}
