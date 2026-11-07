@@ -16,3 +16,7 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+# Engine cache and test artifacts
+cache/
+.pytest_cache/
