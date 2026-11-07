@@ -279,7 +279,7 @@ export function backupPlan(m: Metrics, s: Shock, mode: Mode): BackupStep[] {
   if (m.P > 0)
     add("Ask to defer the loan payment", `A payment deferral frees $${fmt(m.P)}/mo`, { discCut: BACKUP_TRIM, pauseLoan: true });
   if (m.disc > 0)
-    add("Survival mode: cut flexible spending 25%", `Must-pays only: −$${fmt(BACKUP_SURVIVAL * m.disc)}/mo`, {
+    add("Cut flexible spending 25%", `Survival mode, must-pays only: −$${fmt(BACKUP_SURVIVAL * m.disc)}/mo`, {
       discCut: BACKUP_SURVIVAL,
       pauseLoan: m.P > 0,
     });

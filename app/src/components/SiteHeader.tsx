@@ -24,7 +24,7 @@ export function SiteHeader() {
   const path = usePathname();
   return (
     <header className="sticky top-0 z-40 bg-page/75 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link href="/" className="flex min-w-0 items-center gap-2">
           <TangerineMark />
           <span className="hidden truncate text-[15px] font-semibold tracking-tight sm:inline">When Life Gives You Tangerines</span>

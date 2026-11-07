@@ -34,7 +34,7 @@ The app walks you through three steps: **1 Customer → 2 Shock → 3 Plan**. Sa
    Read the headline, for example *"Saving $482 a month… but their savings cover only 0.9 months of spending."*
 2. Click **Hit them with a shock**. **Type the twist card** into the bar at the top and press Enter, or tap the matching scenario card.
    Read the headline aloud, for example *"They run out of money in month 3, 3.9 months short."*
-3. If a judge wants proof, click **Math**. A side panel shows the judges' formula with this customer's numbers in it. For a layoff, tap the **Real EI cap** chip to show the realistic number.
+3. Point at the **math line** under the headline (savings ÷ (spending − income) = months): it's the judges' formula with this customer's numbers. Then **drag a slider** to show it recalculating live. For a layoff, click **With the real EI cap** to show the realistic number.
 4. Click **Make a plan**. Read the two big numbers:
    - Left (*if it hits*): *"Runway goes from 2.1 to 3.9 months with these three moves."*
    - Right (*get ready*): *"Save $2.0K a month and they're fully ready in 19 months."*
@@ -47,10 +47,10 @@ The app walks you through three steps: **1 Customer → 2 Shock → 3 Plan**. Sa
 | "Laid off, EI 55% for 6 months" | Card **Laid off** (income 55%, 6 months) |
 | "Furnace dies, costs a month of spending" | Card **Furnace dies** (one-off = 1 × S) |
 | "Job loss + bills up 15%" | Card **Laid off + bills up** |
-| "Rent goes up $400" | Type it, or **Adjust → Extra per month** = 400 |
-| "Repair costs $5,000" | Type it, or **Adjust → One-off ($)** = 5,000 |
+| "Rent goes up $400" | Type it, or slider **Extra per month** = 400 |
+| "Repair costs $5,000" | Type it, or slider **One-off ($)** = 5,000 |
 | "EI at 50% for 9 months" | Type the card into the box (sets 50% and 9 months) |
-| Something odd | **Adjust**. Every input is one slider |
+| Something odd | The sliders on the left. Every input is one drag |
 
 **Runway edge cases to say out loud:** if the buffer goes to 0 or below after a one-off, runway = **0** (they can't absorb it). If income still covers spending, it's **"no shortfall (120+)"**.
 

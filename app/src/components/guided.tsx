@@ -10,20 +10,14 @@ import {
   Flame,
   Home,
   ShieldCheck,
-  SlidersHorizontal,
   Sparkles,
   X,
   XCircle,
-  Calculator,
-  LineChart as LineChartIcon,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import type { MonthRow } from "@/lib/data";
 import {
   backupPlan,
-  EI_MONTHLY_CAP,
   formatRunway,
   goalPlan,
   money,
@@ -33,11 +27,9 @@ import {
   verdict,
   type Metrics,
   type Mode,
-  type Scenario,
   type Shock,
 } from "@/lib/engine";
 import { parseTwist } from "@/lib/twist";
-import { BalanceChart, DepletionChart, InOutChart } from "./charts";
 import { Slider, Toggle } from "./ui";
 
 /* ------------------------------------------------------------------ helpers */
@@ -94,7 +86,8 @@ const isShock = (s: Shock) => shockLabel(s) !== "";
 export function RunwayRing({ runway, size = 210, caption }: { runway: number | null; size?: number; caption?: string }) {
   const tone = toneOf(runway);
   const t = TONE[tone];
-  const stroke = 14;
+  const stroke = size < 160 ? 10 : 14;
+  const numCls = size < 160 ? "text-4xl" : size < 200 ? "text-5xl" : "text-6xl";
   const r = (size - stroke) / 2;
   const C = 2 * Math.PI * r;
   const frac = runway === null ? 1 : Math.min(runway, 12) / 12;
@@ -132,7 +125,7 @@ export function RunwayRing({ runway, size = 210, caption }: { runway: number | n
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="tnum text-6xl font-semibold tracking-tighter"
+          className={`tnum font-semibold tracking-tighter ${numCls}`}
         >
           {months(runway)}
         </motion.div>
@@ -241,7 +234,7 @@ function NextButton({ onClick, children }: { onClick: () => void; children: Reac
 
 /* ------------------------------------------------------------------ step 1 */
 
-export function StepCustomer({ m, rows, peers, mode, onNext }: { m: Metrics; rows: MonthRow[]; peers: Peers | null; mode: Mode; onNext: () => void }) {
+export function StepCustomer({ m, peers, mode, onNext }: { m: Metrics; peers: Peers | null; mode: Mode; onNext: () => void }) {
   const base = scenario(m, NO_SHOCK, mode);
   const bufMonths = m.S > 0 ? m.B / m.S : 0;
   const surplus = m.I - m.S;
@@ -273,39 +266,14 @@ export function StepCustomer({ m, rows, peers, mode, onNext }: { m: Metrics; row
             <b className="text-ink">{bufMonths.toFixed(1)}</b>.
           </p>
         )}
-        <div className="mt-6 grid grid-cols-3 gap-4 rounded-2xl border border-line bg-surface/70 px-4 py-5">
+        <div className="mt-6 grid grid-cols-2 gap-4 rounded-2xl border border-line bg-surface/70 px-4 py-5 sm:grid-cols-4">
           <Kpi label="Money in" value={k(m.I)} sub="per month" />
+          <Kpi label="Fixed costs" value={k(m.F)} sub={`bills ${k(m.H)} · loan ${k(m.P)}`} />
           <Kpi label="Money out" value={k(m.S)} sub="per month" />
           <Kpi label="Savings" value={k(m.B)} sub={`${bufMonths.toFixed(1)} months`} />
         </div>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
+        <div className="mt-6">
           <NextButton onClick={onNext}>Hit them with a shock</NextButton>
-          <SheetButton label="Full money picture" icon={<Wallet className="size-4" aria-hidden />} wide>
-            <div className="grid gap-2 text-sm sm:grid-cols-2">
-              {[
-                ["I", "Typical money in", m.I],
-                ["F", "Fixed costs (bills + insurance + loan)", m.F],
-                ["S", "Typical spending", m.S],
-                ["B", "Savings buffer (last 6 months)", m.B],
-                ["H", "Household bills", m.H],
-                ["P", "Loan payment", m.P],
-              ].map(([code, label, v]) => (
-                <div key={code as string} className="flex items-baseline justify-between gap-2 rounded-xl bg-surface-2 px-3 py-2">
-                  <span className="text-ink-2">
-                    <span className="mr-1.5 font-mono text-xs text-accent-ink">{code}</span>
-                    {label}
-                  </span>
-                  <span className="tnum font-semibold">{money(v as number)}</span>
-                </div>
-              ))}
-            </div>
-            {rows.length > 0 && (
-              <div className="mt-6 grid gap-8">
-                <InOutChart rows={rows} />
-                <BalanceChart rows={rows} buffer={m.B} />
-              </div>
-            )}
-          </SheetButton>
         </div>
       </div>
     </div>
@@ -320,7 +288,6 @@ export function StepShock({
   setMode,
   shock,
   setShock,
-  path,
   all,
   onNext,
 }: {
@@ -329,13 +296,11 @@ export function StepShock({
   setMode: (m: Mode) => void;
   shock: Shock;
   setShock: (s: Shock) => void;
-  path: { month: number; balance: number; baseline: number; plan?: number }[];
   all: Metrics[];
   onNext: () => void;
 }) {
   const [text, setText] = useState("");
   const [heard, setHeard] = useState<string[]>([]);
-  const [adjust, setAdjust] = useState(false);
   const base = scenario(m, NO_SHOCK, mode);
   const sc = scenario(m, shock, mode);
   const other = scenario(m, shock, mode === "judge" ? "realistic" : "judge");
@@ -359,14 +324,14 @@ export function StepShock({
   };
 
   const headline = !has
-    ? "Pick what happens to them."
+    ? "What happens to them?"
     : v.wipedOut
       ? "The bill alone wipes out their savings."
       : v.survives
         ? `They make it through ${shock.durationMonths} months.`
         : `They run out of money in month ${Math.max(1, Math.ceil(sc.runway ?? 0))}.`;
   const sub = !has
-    ? "Read the twist card, or tap a scenario."
+    ? "Type the twist card, tap a scenario, or drag the sliders."
     : v.wipedOut
       ? `They're ${k(v.shortToday)} short the day it hits.`
       : v.survives
@@ -374,7 +339,7 @@ export function StepShock({
         : `That's ${v.monthsShort.toFixed(1)} months short. They'd need ${k(v.moneyNeeded)} more saved.`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* twist bar */}
       <div>
         <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface p-2 pl-4 shadow-sm focus-within:border-accent">
@@ -425,75 +390,56 @@ export function StepShock({
         </div>
       </div>
 
-      {/* result */}
-      <div className={`grid items-center pt-2 ${adjust ? "gap-8 lg:grid-cols-[auto_minmax(0,1fr)_320px]" : "gap-12 md:grid-cols-[auto_1fr]"}`}>
-        <div className="mx-auto">
-          <RunwayRing
-            runway={sc.runway}
-            size={adjust ? 180 : 210}
-            caption={has ? (v.survives ? "Makes it" : v.wipedOut ? "Wiped out" : "Runs out") : undefined}
-          />
+      {/* sliders (left) drive the result (right) */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+          <div className="mb-3 text-sm font-semibold">Shape the shock</div>
+          <ShockSliders m={m} shock={shock} setShock={setShock} income={sc.income} />
         </div>
-        <div>
-          {has && (
-            <div className="text-sm font-medium text-accent-ink">
-              {shockLabel(shock)} · was {months(base.runway)} months
+
+        <div className={`flex flex-col justify-center rounded-3xl border bg-surface p-6 shadow-sm ${has ? "border-accent/40 ring-4 ring-accent-soft" : "border-line"}`}>
+          <div className="flex items-center gap-6">
+            <RunwayRing runway={sc.runway} size={180} caption={has ? (v.survives ? "Makes it" : v.wipedOut ? "Wiped out" : "Runs out") : undefined} />
+            <div className="min-w-0">
+              {has && (
+                <div className="text-sm font-medium text-accent-ink">
+                  {shockLabel(shock)} · was {months(base.runway)} mo
+                </div>
+              )}
+              <h2 className="mt-1 text-3xl leading-tight font-semibold tracking-tight">{headline}</h2>
+              <p className="mt-2 text-ink-2">{sub}</p>
             </div>
-          )}
-          <h2 className={`mt-1 font-semibold tracking-tight ${adjust ? "text-3xl" : "text-3xl sm:text-4xl"}`}>{headline}</h2>
-          <p className="mt-3 text-lg text-ink-2">{sub}</p>
-          {has && (
-            <p className="mt-2 text-ink-2">
-              Across all {all.length.toLocaleString()} customers, <b className="text-ink">{Math.round(share * 100)}%</b> wouldn&apos;t last{" "}
-              {shock.durationMonths} months.
-            </p>
-          )}
-          <div className="mt-6 flex flex-wrap items-center gap-2.5">
-            {has && <NextButton onClick={onNext}>Make a plan</NextButton>}
-            {has && (shock.jobLoss || mode === "realistic") && (
-              <button
-                onClick={() => setMode(mode === "judge" ? "realistic" : "judge")}
-                className="rounded-full border border-line bg-surface/70 px-3.5 py-2 text-sm text-ink-2 hover:border-accent hover:text-ink"
-                title="Realistic: EI capped at $729/week (2026) and pensions keep paying"
-              >
-                {mode === "judge" ? "Real EI cap" : "Judges' formula"}: <b className="tnum text-ink">{months(other.runway)}</b> mo
-              </button>
-            )}
-            <button
-              onClick={() => setAdjust(!adjust)}
-              aria-pressed={adjust}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm transition-colors ${
-                adjust ? "border-accent bg-accent-soft text-accent-ink" : "border-line bg-surface/70 text-ink-2 hover:border-accent hover:text-ink"
-              }`}
-            >
-              <SlidersHorizontal className="size-4" aria-hidden />
-              {adjust ? "Done adjusting" : has ? "Adjust" : "Build your own"}
-            </button>
-            {has && (
-              <SheetButton label="Math" icon={<Calculator className="size-4" aria-hidden />} title="The math (judges' formula)">
-                <MathBlock m={m} sc={sc} mode={mode} />
-              </SheetButton>
-            )}
-            {has && (
-              <SheetButton label="Chart" icon={<LineChartIcon className="size-4" aria-hidden />} title="Savings, month by month" wide>
-                <DepletionChart data={path} duration={shock.durationMonths} runway={sc.runway} hasShock withPlan={false} />
-              </SheetButton>
-            )}
           </div>
-        </div>
-        <AnimatePresence>
-          {adjust && (
-            <motion.div
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 16 }}
-              transition={{ duration: 0.25 }}
-              className="rounded-3xl border border-line bg-surface p-4 shadow-sm"
-            >
-              <ShockSliders m={m} shock={shock} setShock={setShock} income={sc.income} />
-            </motion.div>
+          {has && (
+            <>
+              <div className="mt-5 rounded-xl bg-surface-2 px-4 py-2.5 font-mono text-sm text-ink-2" title="runway = (savings − one-off) ÷ (spending − income)">
+                {sc.bufferLeft <= 0
+                  ? `${k(m.B)} savings − ${k(sc.oneOff)} one-off ≤ 0  →  0 months`
+                  : sc.gap <= 0
+                    ? `income ${k(sc.income)} ≥ spending ${k(sc.spending)}  →  no shortfall`
+                    : `${k(sc.bufferLeft)} ÷ (${k(sc.spending)} − ${k(sc.income)})  =  ${months(sc.runway)} months`}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2">
+                <span>
+                  <b className="text-ink">{Math.round(share * 100)}%</b> of all {all.length.toLocaleString()} customers wouldn&apos;t last{" "}
+                  {shock.durationMonths} months
+                </span>
+                {(shock.jobLoss || mode === "realistic") && (
+                  <button
+                    onClick={() => setMode(mode === "judge" ? "realistic" : "judge")}
+                    className="underline decoration-dotted underline-offset-4 hover:text-ink"
+                    title="Realistic: EI capped at $729/week (2026) and pensions keep paying"
+                  >
+                    {mode === "judge" ? "With the real EI cap" : "With the judges' formula"}: <b className="tnum text-ink">{months(other.runway)} mo</b>
+                  </button>
+                )}
+              </div>
+              <div className="mt-5">
+                <NextButton onClick={onNext}>Make a plan</NextButton>
+              </div>
+            </>
           )}
-        </AnimatePresence>
+        </div>
       </div>
     </div>
   );
@@ -568,51 +514,9 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
   );
 }
 
-function MathBlock({ m, sc, mode }: { m: Metrics; sc: Scenario; mode: Mode }) {
-  const row = (key: string, formula: string, value: string, strong = false) => (
-    <div className="grid grid-cols-[100px_1fr_auto] items-baseline gap-3 py-1.5">
-      <span className="font-mono text-xs text-muted">{key}</span>
-      <span className="font-mono text-xs text-ink-2">{formula}</span>
-      <span className={`tnum text-right font-mono text-sm ${strong ? "font-semibold" : ""}`}>{value}</span>
-    </div>
-  );
-  return (
-    <div className="rounded-xl bg-surface-2 px-4 py-3">
-      {row("buffer_left", `B − one-off = ${money(m.B)} − ${money(sc.oneOff)}`, money(sc.bufferLeft))}
-      {row("income", sc.incomeNote.replace(/\bI\b/, `I (${money(m.I)})`), money(sc.income))}
-      {row("spending", sc.spendingNote.replace(/^S\b/, `S (${money(m.S)})`).replace(/\bH\b/, `H (${money(m.H)})`), money(sc.spending))}
-      {row("gap", "spending − income", money(sc.gap))}
-      <div className="my-1 border-t border-line" />
-      {row(
-        "runway",
-        sc.bufferLeft <= 0 ? "buffer_left ≤ 0 → 0" : sc.gap <= 0 ? "gap ≤ 0 → no shortfall (120+)" : `min(${money(sc.bufferLeft)} ÷ ${money(sc.gap)}, 120)`,
-        sc.runway === null ? "no shortfall (120+)" : `${formatRunway(sc.runway)} months`,
-        true,
-      )}
-      <p className="mt-2 text-xs text-muted">
-        {mode === "judge"
-          ? "Judges' definitions, exactly as in the brief."
-          : `Realistic: EI pays 55% of earnings up to $729/week (≈ ${money(EI_MONTHLY_CAP)}/mo, 2026), and pensions keep paying.`}
-      </p>
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------------ step 3 */
 
-export function StepPlan({
-  m,
-  mode,
-  shock,
-  path,
-  onRestart,
-}: {
-  m: Metrics;
-  mode: Mode;
-  shock: Shock;
-  path: { month: number; balance: number; baseline: number; plan?: number }[];
-  onRestart: () => void;
-}) {
+export function StepPlan({ m, mode, shock, onRestart }: { m: Metrics; mode: Mode; shock: Shock; onRestart: () => void }) {
   const has = isShock(shock);
   const eff: Shock = has ? shock : { ...NO_SHOCK, jobLoss: true, incomePct: 0.55, durationMonths: 6 };
   const steps = backupPlan(m, eff, mode);
@@ -724,17 +628,7 @@ export function StepPlan({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2.5">
-        {has && (
-          <SheetButton
-            label="See it on a chart"
-            icon={<LineChartIcon className="size-4" aria-hidden />}
-            title="How the backup plan stretches their savings"
-            wide
-          >
-            <DepletionChart data={path} duration={shock.durationMonths} runway={scenario(m, shock, mode).runway} hasShock withPlan />
-          </SheetButton>
-        )}
+      <div className="text-center">
         <button onClick={onRestart} className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-2 hover:text-ink">
           Try another customer →
         </button>
