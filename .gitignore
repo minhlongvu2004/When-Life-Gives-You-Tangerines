@@ -1,5 +1,6 @@
 # Datathon data (transactions.csv is ~100 MB, over GitHub's file limit)
-data/
+/data/
+data-*/
 
 # Python
 __pycache__/

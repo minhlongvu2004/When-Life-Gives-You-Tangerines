@@ -1,0 +1,289 @@
+{
+ "nAccounts": 4500,
+ "nTransactions": 1056320,
+ "nLoans": 682,
+ "eiMonthlyCap": 3159.0,
+ "byFifth": [
+  {
+   "group": "Lowest",
+   "n": 900,
+   "medianIncome": 2067.65,
+   "medianSpending": 1536.43,
+   "medianBuffer": 13599.15,
+   "bufferMonths": 8.51,
+   "failJudge": 0.04,
+   "failReal": 0.04,
+   "pensionerShare": 0.16
+  },
+  {
+   "group": "Low",
+   "n": 900,
+   "medianIncome": 3817.62,
+   "medianSpending": 2858.12,
+   "medianBuffer": 15496.44,
+   "bufferMonths": 5.84,
+   "failJudge": 0.08,
+   "failReal": 0.07,
+   "pensionerShare": 0.66
+  },
+  {
+   "group": "Middle",
+   "n": 900,
+   "medianIncome": 7568.26,
+   "medianSpending": 7276.63,
+   "medianBuffer": 22772.68,
+   "bufferMonths": 2.99,
+   "failJudge": 0.42,
+   "failReal": 0.56,
+   "pensionerShare": 0.0
+  },
+  {
+   "group": "High",
+   "n": 900,
+   "medianIncome": 12257.52,
+   "medianSpending": 11860.87,
+   "medianBuffer": 29293.9,
+   "bufferMonths": 2.5,
+   "failJudge": 0.51,
+   "failReal": 0.88,
+   "pensionerShare": 0.0
+  },
+  {
+   "group": "Highest",
+   "n": 900,
+   "medianIncome": 20045.55,
+   "medianSpending": 18395.45,
+   "medianBuffer": 35417.1,
+   "bufferMonths": 1.8,
+   "failJudge": 0.7,
+   "failReal": 0.99,
+   "pensionerShare": 0.0
+  }
+ ],
+ "byTenth": [
+  {
+   "group": "D1",
+   "n": 450,
+   "medianIncome": 1579.53,
+   "medianSpending": 1326.88,
+   "medianBuffer": 14060.2,
+   "bufferMonths": 9.03,
+   "failJudge": 0.06,
+   "failReal": 0.06,
+   "pensionerShare": 0.0
+  },
+  {
+   "group": "D2",
+   "n": 450,
+   "medianIncome": 2450.44,
+   "medianSpending": 1744.4,
+   "medianBuffer": 13482.23,
+   "bufferMonths": 7.91,
+   "failJudge": 0.03,
+   "failReal": 0.03,
+   "pensionerShare": 0.32
+  },
+  {
+   "group": "D3",
+   "n": 450,
+   "medianIncome": 3378.81,
+   "medianSpending": 2370.22,
+   "medianBuffer": 14369.31,
+   "bufferMonths": 6.25,
+   "failJudge": 0.06,
+   "failReal": 0.06,
+   "pensionerShare": 0.72
+  },
+  {
+   "group": "D4",
+   "n": 450,
+   "medianIncome": 4223.72,
+   "medianSpending": 3334.7,
+   "medianBuffer": 17821.57,
+   "bufferMonths": 5.23,
+   "failJudge": 0.1,
+   "failReal": 0.09,
+   "pensionerShare": 0.6
+  },
+  {
+   "group": "D5",
+   "n": 450,
+   "medianIncome": 6421.24,
+   "medianSpending": 6006.44,
+   "medianBuffer": 20833.87,
+   "bufferMonths": 3.31,
+   "failJudge": 0.38,
+   "failReal": 0.44,
+   "pensionerShare": 0.0
+  },
+  {
+   "group": "D6",
+   "n": 450,
+   "medianIncome": 8804.35,
+   "medianSpending": 8425.53,
+   "medianBuffer": 24845.04,
+   "bufferMonths": 2.79,
+   "failJudge": 0.46,
+   "failReal": 0.68,
+   "pensionerShare": 0.0
+  },
+  {
+   "group": "D7",
+   "n": 450,
+   "medianIncome": 11101.41,
+   "medianSpending": 10683.81,
+   "medianBuffer": 28287.42,
+   "bufferMonths": 2.67,
+   "failJudge": 0.47,
+   "failReal": 0.82,
+   "pensionerShare": 0.0
+  },
+  {
+   "group": "D8",
+   "n": 450,
+   "medianIncome": 13281.1,
+   "medianSpending": 13014.35,
+   "medianBuffer": 30431.83,
+   "bufferMonths": 2.36,
+   "failJudge": 0.55,
+   "failReal": 0.94,
+   "pensionerShare": 0.0
+  },
+  {
+   "group": "D9",
+   "n": 450,
+   "medianIncome": 15641.79,
+   "medianSpending": 15339.94,
+   "medianBuffer": 32800.11,
+   "bufferMonths": 2.1,
+   "failJudge": 0.65,
+   "failReal": 0.99,
+   "pensionerShare": 0.0
+  },
+  {
+   "group": "D10",
+   "n": 450,
+   "medianIncome": 25473.54,
+   "medianSpending": 23002.53,
+   "medianBuffer": 38899.32,
+   "bufferMonths": 1.63,
+   "failJudge": 0.76,
+   "failReal": 1.0,
+   "pensionerShare": 0.0
+  }
+ ],
+ "nonPensionerFailJudge": 0.42,
+ "nonPensionerFailReal": 0.61,
+ "allFailJudge": 0.35,
+ "allFailReal": 0.51,
+ "twists": {
+  "baseline": {
+   "zero": 0.01,
+   "under3": 0.01,
+   "under6": 0.03,
+   "noShortfall": 0.74
+  },
+  "jobLoss": {
+   "zero": 0.01,
+   "under3": 0.1,
+   "under6": 0.35,
+   "noShortfall": 0.0
+  },
+  "furnace": {
+   "zero": 0.04,
+   "under3": 0.06,
+   "under6": 0.09,
+   "noShortfall": 0.72
+  },
+  "jobLossBills": {
+   "zero": 0.01,
+   "under3": 0.11,
+   "under6": 0.39,
+   "noShortfall": 0.04
+  }
+ },
+ "preLoan": {
+  "n": 682,
+  "defaults": 76,
+  "volatility": [
+   {
+    "group": "Steadiest",
+    "n": 171,
+    "defaultRate": 0.04,
+    "lo": 0.01,
+    "hi": 0.31
+   },
+   {
+    "group": "Steady",
+    "n": 170,
+    "defaultRate": 0.05,
+    "lo": 0.31,
+    "hi": 0.44
+   },
+   {
+    "group": "Bumpy",
+    "n": 170,
+    "defaultRate": 0.13,
+    "lo": 0.44,
+    "hi": 0.84
+   },
+   {
+    "group": "Most volatile",
+    "n": 171,
+    "defaultRate": 0.23,
+    "lo": 0.84,
+    "hi": 2.04
+   }
+  ],
+  "volatilityAUC": 0.71,
+  "paymentRatio": [
+   {
+    "group": "Lightest",
+    "n": 171,
+    "defaultRate": 0.04,
+    "lo": 0.01,
+    "hi": 0.11
+   },
+   {
+    "group": "Light",
+    "n": 170,
+    "defaultRate": 0.11,
+    "lo": 0.11,
+    "hi": 0.16
+   },
+   {
+    "group": "Heavy",
+    "n": 170,
+    "defaultRate": 0.09,
+    "lo": 0.16,
+    "hi": 0.24
+   },
+   {
+    "group": "Heaviest",
+    "n": 171,
+    "defaultRate": 0.2,
+    "lo": 0.25,
+    "hi": 32.65
+   }
+  ],
+  "paymentRatioAUC": 0.67
+ },
+ "featured": [
+  {
+   "id": 38211,
+   "label": "High earner, thin buffer"
+  },
+  {
+   "id": 20303,
+   "label": "Modest income, deep savings"
+  },
+  {
+   "id": 21516,
+   "label": "Pensioner"
+  },
+  {
+   "id": 38447,
+   "label": "Loan + living on the edge"
+  }
+ ]
+}
