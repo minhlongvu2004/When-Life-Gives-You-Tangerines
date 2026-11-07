@@ -23,18 +23,15 @@ export function Engine() {
   const all = useMemo(() => (metrics ? [...metrics.values()] : []), [metrics]);
   const sortedI = useMemo(() => all.map((x) => x.I).sort((a, b) => a - b), [all]);
 
-  const open = useCallback(
-    (n: number) => {
-      setId(n);
-      setStep(0);
-      setDetail(undefined);
-      const url = new URL(window.location.href);
-      url.searchParams.set("id", String(n));
-      window.history.replaceState(null, "", url);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    },
-    [],
-  );
+  const open = useCallback((n: number) => {
+    setId(n);
+    setStep(0);
+    setDetail(undefined);
+    const url = new URL(window.location.href);
+    url.searchParams.set("id", String(n));
+    window.history.replaceState(null, "", url);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
   const close = () => {
     setId(null);
     const url = new URL(window.location.href);
@@ -68,7 +65,10 @@ export function Engine() {
     const f = Math.min(4, Math.floor((rank / n) * 5));
     const lo = sortedI[Math.floor((f * n) / 5)];
     const hi = sortedI[Math.min(n - 1, Math.floor(((f + 1) * n) / 5) - 1)];
-    const buf = all.filter((x) => x.I >= lo && x.I <= hi && x.S > 0).map((x) => x.B / x.S).sort((a, b) => a - b);
+    const buf = all
+      .filter((x) => x.I >= lo && x.I <= hi && x.S > 0)
+      .map((x) => x.B / x.S)
+      .sort((a, b) => a - b);
     const mine = m.S > 0 ? m.B / m.S : 0;
     return {
       fifth: FIFTHS[f],
@@ -84,7 +84,10 @@ export function Engine() {
     return p.map((pt, i) => ({ ...pt, plan: plan[i].balance }));
   }, [m, shock, mode]);
 
-  if (!m) return <Landing ready={!!metrics} featured={findings?.featured ?? []} onOpen={(n) => metrics?.has(n) && open(n)} has={(n) => !!metrics?.has(n)} all={all} />;
+  if (!m)
+    return (
+      <Landing ready={!!metrics} featured={findings?.featured ?? []} onOpen={(n) => metrics?.has(n) && open(n)} has={(n) => !!metrics?.has(n)} all={all} />
+    );
 
   const who = detail?.owner
     ? `${detail.owner.gender === "F" ? "Woman" : detail.owner.gender === "M" ? "Man" : "Customer"}${detail.owner.age ? `, ${detail.owner.age}` : ""} · ${detail.region}`
@@ -93,13 +96,17 @@ export function Engine() {
   return (
     <div className="pt-2">
       {/* customer pill + stepper */}
-      <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-1.5 pl-4 shadow-sm">
           <span className="text-sm">
             <span className="tnum font-semibold">#{m.id}</span>
             {who && <span className="hidden text-ink-2 sm:inline"> · {who}</span>}
           </span>
-          <button onClick={close} className="grid size-7 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-ink" aria-label="Change customer">
+          <button
+            onClick={close}
+            className="grid size-7 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-ink"
+            aria-label="Change customer"
+          >
             <X className="size-4" />
           </button>
         </div>
@@ -110,7 +117,13 @@ export function Engine() {
               onClick={() => setStep(i)}
               className={`relative flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${step === i ? "text-page" : "text-ink-2 hover:text-ink"}`}
             >
-              {step === i && <motion.span layoutId="step-pill" className="absolute inset-0 rounded-full bg-ink" transition={{ type: "spring", duration: 0.4, bounce: 0.15 }} />}
+              {step === i && (
+                <motion.span
+                  layoutId="step-pill"
+                  className="absolute inset-0 rounded-full bg-ink"
+                  transition={{ type: "spring", duration: 0.4, bounce: 0.15 }}
+                />
+              )}
               <span className="relative tnum">{i + 1}</span>
               <span className="relative">{s}</span>
             </button>
@@ -125,6 +138,7 @@ export function Engine() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="flex min-h-[calc(100vh-220px)] flex-col justify-center pb-6"
         >
           {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} />}
           {step === 1 && <StepShock m={m} mode={mode} setMode={setMode} shock={shock} setShock={setShock} path={path} all={all} onNext={() => setStep(2)} />}
@@ -192,14 +206,21 @@ function Landing({
             className="tnum min-w-0 flex-1 bg-transparent py-2 text-lg outline-none placeholder:text-muted"
             aria-label="Account ID"
           />
-          <button disabled={!ready} className="flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 font-semibold text-white hover:opacity-90 disabled:opacity-50">
+          <button
+            disabled={!ready}
+            className="flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 font-semibold text-white hover:opacity-90 disabled:opacity-50"
+          >
             Go <ArrowRight className="size-4" aria-hidden />
           </button>
         </form>
         {err && <p className="mt-3 text-sm text-critical-text">{err}</p>}
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm">
           {featured.slice(0, 3).map((f) => (
-            <button key={f.id} onClick={() => onOpen(f.id)} className="rounded-full border border-line bg-surface/70 px-3.5 py-1.5 text-ink-2 hover:border-accent hover:text-ink">
+            <button
+              key={f.id}
+              onClick={() => onOpen(f.id)}
+              className="rounded-full border border-line bg-surface/70 px-3.5 py-1.5 text-ink-2 hover:border-accent hover:text-ink"
+            >
               {f.label}
             </button>
           ))}

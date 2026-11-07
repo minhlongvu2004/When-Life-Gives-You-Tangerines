@@ -12,10 +12,14 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
+  X,
   XCircle,
+  Calculator,
+  LineChart as LineChartIcon,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { MonthRow } from "@/lib/data";
 import {
   backupPlan,
@@ -62,7 +66,13 @@ const TONE = {
 export const PRESETS: { key: string; title: string; sub: string; Icon: LucideIcon; shock: Shock }[] = [
   { key: "job", title: "Laid off", sub: "EI pays 55% · 6 months", Icon: Briefcase, shock: { ...NO_SHOCK, jobLoss: true, incomePct: 0.55, durationMonths: 6 } },
   { key: "furnace", title: "Furnace dies", sub: "Costs 1 month of spending", Icon: Flame, shock: { ...NO_SHOCK, oneOffMult: 1 } },
-  { key: "combo", title: "Laid off + bills up", sub: "EI 55% · bills +15%", Icon: CloudLightning, shock: { ...NO_SHOCK, jobLoss: true, incomePct: 0.55, billsPct: 0.15, durationMonths: 6 } },
+  {
+    key: "combo",
+    title: "Laid off + bills up",
+    sub: "EI 55% · bills +15%",
+    Icon: CloudLightning,
+    shock: { ...NO_SHOCK, jobLoss: true, incomePct: 0.55, billsPct: 0.15, durationMonths: 6 },
+  },
   { key: "rent", title: "Rent goes up", sub: "Bills +15%", Icon: Home, shock: { ...NO_SHOCK, billsPct: 0.15, durationMonths: 12 } },
 ];
 
@@ -81,7 +91,7 @@ const isShock = (s: Shock) => shockLabel(s) !== "";
 
 /* ------------------------------------------------------------------ primitives */
 
-export function RunwayRing({ runway, size = 232, caption }: { runway: number | null; size?: number; caption?: string }) {
+export function RunwayRing({ runway, size = 210, caption }: { runway: number | null; size?: number; caption?: string }) {
   const tone = toneOf(runway);
   const t = TONE[tone];
   const stroke = 14;
@@ -106,10 +116,24 @@ export function RunwayRing({ runway, size = 232, caption }: { runway: number | n
           transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         />
         {/* 6-month mark */}
-        <line x1={size - stroke * 1.6} y1={size / 2} x2={size - 2} y2={size / 2} stroke="var(--ink-2)" strokeWidth={2} transform={`rotate(180 ${size / 2} ${size / 2})`} />
+        <line
+          x1={size - stroke * 1.6}
+          y1={size / 2}
+          x2={size - 2}
+          y2={size / 2}
+          stroke="var(--ink-2)"
+          strokeWidth={2}
+          transform={`rotate(180 ${size / 2} ${size / 2})`}
+        />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <motion.div key={months(runway)} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }} className="tnum text-6xl font-semibold tracking-tighter">
+        <motion.div
+          key={months(runway)}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="tnum text-6xl font-semibold tracking-tighter"
+        >
           {months(runway)}
         </motion.div>
         <div className="mt-0.5 text-sm text-ink-2">{runway === null ? "months · no shortfall" : "months of runway"}</div>
@@ -141,6 +165,58 @@ export function Disclosure({ label, children, icon }: { label: string; children:
   );
 }
 
+/** A pill that opens a right-hand side panel, so details never push the page down. */
+export function SheetButton({ label, icon, title, children, wide }: { label: string; icon?: ReactNode; title?: string; children: ReactNode; wide?: boolean }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/70 px-3.5 py-2 text-sm text-ink-2 transition-colors hover:border-accent hover:text-ink"
+      >
+        {icon}
+        {label}
+      </button>
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-50 bg-black/25 backdrop-blur-[2px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
+            />
+            <motion.aside
+              role="dialog"
+              aria-label={title ?? label}
+              className={`fixed top-0 right-0 z-50 flex h-full w-full flex-col border-l border-line bg-surface shadow-2xl ${wide ? "max-w-3xl" : "max-w-xl"}`}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 32, stiffness: 320 }}
+            >
+              <div className="flex items-center justify-between border-b border-line px-6 py-4">
+                <h3 className="text-base font-semibold">{title ?? label}</h3>
+                <button onClick={() => setOpen(false)} className="grid size-8 place-items-center rounded-full hover:bg-surface-2" aria-label="Close">
+                  <X className="size-4" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="text-center">
@@ -165,19 +241,7 @@ function NextButton({ onClick, children }: { onClick: () => void; children: Reac
 
 /* ------------------------------------------------------------------ step 1 */
 
-export function StepCustomer({
-  m,
-  rows,
-  peers,
-  mode,
-  onNext,
-}: {
-  m: Metrics;
-  rows: MonthRow[];
-  peers: Peers | null;
-  mode: Mode;
-  onNext: () => void;
-}) {
+export function StepCustomer({ m, rows, peers, mode, onNext }: { m: Metrics; rows: MonthRow[]; peers: Peers | null; mode: Mode; onNext: () => void }) {
   const base = scenario(m, NO_SHOCK, mode);
   const bufMonths = m.S > 0 ? m.B / m.S : 0;
   const surplus = m.I - m.S;
@@ -209,42 +273,40 @@ export function StepCustomer({
             <b className="text-ink">{bufMonths.toFixed(1)}</b>.
           </p>
         )}
-        <div className="mt-7 grid grid-cols-3 gap-4 rounded-2xl border border-line bg-surface/70 px-4 py-5">
+        <div className="mt-6 grid grid-cols-3 gap-4 rounded-2xl border border-line bg-surface/70 px-4 py-5">
           <Kpi label="Money in" value={k(m.I)} sub="per month" />
           <Kpi label="Money out" value={k(m.S)} sub="per month" />
           <Kpi label="Savings" value={k(m.B)} sub={`${bufMonths.toFixed(1)} months`} />
         </div>
-        <div className="mt-7">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           <NextButton onClick={onNext}>Hit them with a shock</NextButton>
-        </div>
-      </div>
-      <div className="md:col-span-2">
-        <Disclosure label="See the full money picture">
-          <div className="grid gap-3 text-sm sm:grid-cols-3">
-            {[
-              ["I", "Typical money in", m.I],
-              ["F", "Fixed costs (bills + insurance + loan)", m.F],
-              ["S", "Typical spending", m.S],
-              ["B", "Savings buffer (last 6 months)", m.B],
-              ["H", "Household bills", m.H],
-              ["P", "Loan payment", m.P],
-            ].map(([code, label, v]) => (
-              <div key={code as string} className="flex items-baseline justify-between gap-2 rounded-xl bg-surface-2 px-3 py-2">
-                <span className="text-ink-2">
-                  <span className="mr-1.5 font-mono text-xs text-accent-ink">{code}</span>
-                  {label}
-                </span>
-                <span className="tnum font-semibold">{money(v as number)}</span>
-              </div>
-            ))}
-          </div>
-          {rows.length > 0 && (
-            <div className="mt-6 grid gap-8 lg:grid-cols-2">
-              <InOutChart rows={rows} />
-              <BalanceChart rows={rows} buffer={m.B} />
+          <SheetButton label="Full money picture" icon={<Wallet className="size-4" aria-hidden />} wide>
+            <div className="grid gap-2 text-sm sm:grid-cols-2">
+              {[
+                ["I", "Typical money in", m.I],
+                ["F", "Fixed costs (bills + insurance + loan)", m.F],
+                ["S", "Typical spending", m.S],
+                ["B", "Savings buffer (last 6 months)", m.B],
+                ["H", "Household bills", m.H],
+                ["P", "Loan payment", m.P],
+              ].map(([code, label, v]) => (
+                <div key={code as string} className="flex items-baseline justify-between gap-2 rounded-xl bg-surface-2 px-3 py-2">
+                  <span className="text-ink-2">
+                    <span className="mr-1.5 font-mono text-xs text-accent-ink">{code}</span>
+                    {label}
+                  </span>
+                  <span className="tnum font-semibold">{money(v as number)}</span>
+                </div>
+              ))}
             </div>
-          )}
-        </Disclosure>
+            {rows.length > 0 && (
+              <div className="mt-6 grid gap-8">
+                <InOutChart rows={rows} />
+                <BalanceChart rows={rows} buffer={m.B} />
+              </div>
+            )}
+          </SheetButton>
+        </div>
       </div>
     </div>
   );
@@ -311,7 +373,7 @@ export function StepShock({
         : `That's ${v.monthsShort.toFixed(1)} months short. They'd need ${k(v.moneyNeeded)} more saved.`;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* twist bar */}
       <div>
         <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface p-2 pl-4 shadow-sm focus-within:border-accent">
@@ -339,7 +401,7 @@ export function StepShock({
             </motion.div>
           )}
         </AnimatePresence>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-3 flex flex-wrap gap-2">
           {PRESETS.map((p) => {
             const active = JSON.stringify(p.shock) === JSON.stringify(shock);
             return (
@@ -349,13 +411,13 @@ export function StepShock({
                   setShock(p.shock);
                   setHeard([]);
                 }}
-                className={`rounded-2xl border p-4 text-left transition-all ${
-                  active ? "border-accent bg-accent-soft shadow-sm" : "border-line bg-surface/70 hover:-translate-y-0.5 hover:border-accent/60"
+                title={p.sub}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                  active ? "border-accent bg-accent-soft text-accent-ink" : "border-line bg-surface/70 text-ink-2 hover:border-accent/60 hover:text-ink"
                 }`}
               >
-                <p.Icon className={`size-5 ${active ? "text-accent-ink" : "text-ink-2"}`} aria-hidden />
-                <div className="mt-2 text-sm font-semibold">{p.title}</div>
-                <div className="text-xs text-muted">{p.sub}</div>
+                <p.Icon className="size-4" aria-hidden />
+                {p.title}
               </button>
             );
           })}
@@ -363,7 +425,7 @@ export function StepShock({
       </div>
 
       {/* result */}
-      <div className="grid items-center gap-10 md:grid-cols-[auto_1fr]">
+      <div className="grid items-center gap-12 pt-2 md:grid-cols-[auto_1fr]">
         <div className="mx-auto">
           <RunwayRing runway={sc.runway} caption={has ? (v.survives ? "Makes it" : v.wipedOut ? "Wiped out" : "Runs out") : undefined} />
         </div>
@@ -377,39 +439,35 @@ export function StepShock({
           <p className="mt-3 text-lg text-ink-2">{sub}</p>
           {has && (
             <p className="mt-2 text-ink-2">
-              Across all {all.length.toLocaleString()} customers, <b className="text-ink">{Math.round(share * 100)}%</b> wouldn&apos;t last {shock.durationMonths} months.
+              Across all {all.length.toLocaleString()} customers, <b className="text-ink">{Math.round(share * 100)}%</b> wouldn&apos;t last{" "}
+              {shock.durationMonths} months.
             </p>
           )}
           {has && (
-            <div className="mt-5 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-2.5">
               <NextButton onClick={onNext}>Make a plan</NextButton>
               {(shock.jobLoss || mode === "realistic") && (
                 <button
                   onClick={() => setMode(mode === "judge" ? "realistic" : "judge")}
-                  className="rounded-full border border-line px-4 py-2.5 text-sm text-ink-2 hover:border-accent hover:text-ink"
+                  className="rounded-full border border-line bg-surface/70 px-3.5 py-2 text-sm text-ink-2 hover:border-accent hover:text-ink"
                   title="Realistic: EI capped at $729/week (2026) and pensions keep paying"
                 >
-                  {mode === "judge" ? "With the real EI cap" : "With the judges' formula"}: <b className="tnum text-ink">{months(other.runway)}</b> mo
+                  {mode === "judge" ? "Real EI cap" : "Judges' formula"}: <b className="tnum text-ink">{months(other.runway)}</b> mo
                 </button>
               )}
+              <SheetButton label="Math" icon={<Calculator className="size-4" aria-hidden />} title="The math (judges' formula)">
+                <MathBlock m={m} sc={sc} mode={mode} />
+              </SheetButton>
+              <SheetButton label="Chart" icon={<LineChartIcon className="size-4" aria-hidden />} title="Savings, month by month" wide>
+                <DepletionChart data={path} duration={shock.durationMonths} runway={sc.runway} hasShock withPlan={false} />
+              </SheetButton>
+              <SheetButton label="Adjust" icon={<SlidersHorizontal className="size-4" aria-hidden />} title="Adjust the shock">
+                <ShockSliders m={m} shock={shock} setShock={setShock} income={sc.income} />
+              </SheetButton>
             </div>
           )}
         </div>
       </div>
-
-      {has && (
-        <div className="space-y-3">
-          <Disclosure label="See the math">
-            <MathBlock m={m} sc={sc} mode={mode} />
-          </Disclosure>
-          <Disclosure label="Adjust the shock by hand" icon={<SlidersHorizontal className="size-4" aria-hidden />}>
-            <ShockSliders m={m} shock={shock} setShock={setShock} income={sc.income} />
-          </Disclosure>
-          <Disclosure label="See their savings month by month">
-            <DepletionChart data={path} duration={shock.durationMonths} runway={sc.runway} hasShock withPlan={false} />
-          </Disclosure>
-        </div>
-      )}
     </div>
   );
 }
@@ -417,20 +475,68 @@ export function StepShock({
 function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock; setShock: (s: Shock) => void; income: number }) {
   const set = (p: Partial<Shock>) => setShock({ ...shock, ...p });
   return (
-    <div className="grid gap-x-10 gap-y-5 sm:grid-cols-2">
-      <div className="sm:col-span-2">
+    <div className="grid gap-y-6">
+      <div>
         <Toggle
           checked={shock.jobLoss}
           onChange={(on) => set(on ? { jobLoss: true, incomePct: shock.incomePct === 1 ? 0.55 : shock.incomePct } : { jobLoss: false, incomePct: 1 })}
           label="Job loss (income replaced by EI)"
         />
       </div>
-      <Slider label={shock.jobLoss ? "EI pays" : "Income after shock"} value={shock.incomePct} min={0} max={1} step={0.05} onChange={(x) => set({ incomePct: x })} display={`${Math.round(shock.incomePct * 100)}% · ${money(income)}/mo`} />
-      <Slider label="Bills / rent increase" value={shock.billsPct} min={0} max={0.5} step={0.01} onChange={(x) => set({ billsPct: x })} display={`+${Math.round(shock.billsPct * 100)}% · +${money(shock.billsPct * m.H)}/mo`} />
-      <Slider label="Extra monthly cost" value={shock.extraMonthly} min={0} max={3000} step={50} onChange={(x) => set({ extraMonthly: x })} display={`+${money(shock.extraMonthly)}/mo`} />
-      <Slider label="One-off cost (months of spending)" value={shock.oneOffMult} min={0} max={3} step={0.25} onChange={(x) => set({ oneOffMult: x })} display={`${shock.oneOffMult}× · ${money(shock.oneOffMult * m.S)}`} />
-      <Slider label="One-off cost ($)" value={shock.oneOffAbs} min={0} max={20000} step={250} onChange={(x) => set({ oneOffAbs: x })} display={money(shock.oneOffAbs)} />
-      <Slider label="How long it lasts" value={shock.durationMonths} min={1} max={24} step={1} onChange={(x) => set({ durationMonths: x })} display={`${shock.durationMonths} months`} />
+      <Slider
+        label={shock.jobLoss ? "EI pays" : "Income after shock"}
+        value={shock.incomePct}
+        min={0}
+        max={1}
+        step={0.05}
+        onChange={(x) => set({ incomePct: x })}
+        display={`${Math.round(shock.incomePct * 100)}% · ${money(income)}/mo`}
+      />
+      <Slider
+        label="Bills / rent increase"
+        value={shock.billsPct}
+        min={0}
+        max={0.5}
+        step={0.01}
+        onChange={(x) => set({ billsPct: x })}
+        display={`+${Math.round(shock.billsPct * 100)}% · +${money(shock.billsPct * m.H)}/mo`}
+      />
+      <Slider
+        label="Extra monthly cost"
+        value={shock.extraMonthly}
+        min={0}
+        max={3000}
+        step={50}
+        onChange={(x) => set({ extraMonthly: x })}
+        display={`+${money(shock.extraMonthly)}/mo`}
+      />
+      <Slider
+        label="One-off cost (months of spending)"
+        value={shock.oneOffMult}
+        min={0}
+        max={3}
+        step={0.25}
+        onChange={(x) => set({ oneOffMult: x })}
+        display={`${shock.oneOffMult}× · ${money(shock.oneOffMult * m.S)}`}
+      />
+      <Slider
+        label="One-off cost ($)"
+        value={shock.oneOffAbs}
+        min={0}
+        max={20000}
+        step={250}
+        onChange={(x) => set({ oneOffAbs: x })}
+        display={money(shock.oneOffAbs)}
+      />
+      <Slider
+        label="How long it lasts"
+        value={shock.durationMonths}
+        min={1}
+        max={24}
+        step={1}
+        onChange={(x) => set({ durationMonths: x })}
+        display={`${shock.durationMonths} months`}
+      />
     </div>
   );
 }
@@ -494,10 +600,10 @@ export function StepPlan({
   const progress = g.target > 0 ? Math.min(1, Math.max(0, g.current / g.target)) : 1;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="text-center">
-        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Two plans, built from their own numbers.</h2>
-        <p className="mt-2 text-lg text-ink-2">One for the day it hits. One to be ready before it does.</p>
+        <h2 className="text-3xl font-semibold tracking-tight">Two plans, built from their own numbers.</h2>
+        <p className="mt-1 text-ink-2">One for the day it hits. One to be ready before it does.</p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -510,11 +616,13 @@ export function StepPlan({
             <span className={`tnum text-5xl font-semibold tracking-tighter ${ok ? "text-good-text" : "text-critical-text"}`}>{months(last.runway)}</span>
             <span className="text-ink-2">months</span>
           </div>
-          <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${ok ? "bg-good-soft text-good-text" : "bg-critical-soft text-critical-text"}`}>
+          <div
+            className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${ok ? "bg-good-soft text-good-text" : "bg-critical-soft text-critical-text"}`}
+          >
             {ok ? <CheckCircle2 className="size-4" aria-hidden /> : <XCircle className="size-4" aria-hidden />}
             {ok ? `Makes it through ${dur} months` : last.runway === 0 ? "Savings can't cover the bill" : `Still short of ${dur} months`}
           </div>
-          <ol className="mt-5 space-y-2.5">
+          <ol className="mt-4 space-y-2">
             {eff.jobLoss && <PlanStep n={1} title="Apply for EI right away" detail="Within 4 weeks of the last day of work" />}
             {steps.slice(1).map((s, i) => (
               <PlanStep
@@ -528,7 +636,9 @@ export function StepPlan({
           </ol>
           {!ok && (
             <p className="mt-4 text-sm text-ink-2">
-              {last.runway === 0 ? "Monthly cuts can't pay a bill due today. Spread the repair over a payment plan, and build the fund on the right." : "Cuts alone aren't enough. The real fix is the fund on the right."}
+              {last.runway === 0
+                ? "Monthly cuts can't pay a bill due today. Spread the repair over a payment plan, and build the fund on the right."
+                : "Cuts alone aren't enough. The real fix is the fund on the right."}
             </p>
           )}
         </div>
@@ -564,10 +674,15 @@ export function StepPlan({
                   <span>Goal {k(g.target)}</span>
                 </div>
                 <div className="h-2.5 overflow-hidden rounded-full bg-accent-soft">
-                  <motion.div className="h-full rounded-full bg-accent" initial={{ width: 0 }} animate={{ width: `${progress * 100}%` }} transition={{ duration: 0.8 }} />
+                  <motion.div
+                    className="h-full rounded-full bg-accent"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress * 100}%` }}
+                    transition={{ duration: 0.8 }}
+                  />
                 </div>
               </div>
-              <ul className="mt-5 space-y-2 text-sm text-ink-2">
+              <ul className="mt-4 space-y-1.5 text-sm text-ink-2">
                 <li>• Goal = {g.targetReason}.</li>
                 {g.surplus > 0 && (
                   <li>
@@ -582,15 +697,19 @@ export function StepPlan({
         </div>
       </div>
 
-      {has && (
-        <Disclosure label="See how the backup plan stretches their savings">
-          <DepletionChart data={path} duration={shock.durationMonths} runway={scenario(m, shock, mode).runway} hasShock withPlan />
-        </Disclosure>
-      )}
-
-      <div className="text-center">
-        <button onClick={onRestart} className="text-sm font-medium text-ink-2 underline-offset-4 hover:text-ink hover:underline">
-          Try another customer
+      <div className="flex flex-wrap items-center justify-center gap-2.5">
+        {has && (
+          <SheetButton
+            label="See it on a chart"
+            icon={<LineChartIcon className="size-4" aria-hidden />}
+            title="How the backup plan stretches their savings"
+            wide
+          >
+            <DepletionChart data={path} duration={shock.durationMonths} runway={scenario(m, shock, mode).runway} hasShock withPlan />
+          </SheetButton>
+        )}
+        <button onClick={onRestart} className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-2 hover:text-ink">
+          Try another customer →
         </button>
       </div>
     </div>
