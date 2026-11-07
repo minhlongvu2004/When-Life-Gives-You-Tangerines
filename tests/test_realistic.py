@@ -78,3 +78,10 @@ def test_bridge_shape():
 def test_months_labels():
     r = simulate(synthetic(), Shock(start_month=11, extra_monthly=3000))
     assert r.months[:3] == ["2026-11", "2026-12", "2027-01"]
+
+
+def test_loan_ending_in_2026_before_start_is_removed_from_month_0():
+    p = synthetic(P=300.0, loan_end="2026-03", B=30000.0)
+    t = Toggles(seasonality=False, ei_cap=False, ei_ends=False, pension_kept=False, loan_payoff=True)
+    r = simulate(p, Shock(job_loss=True, start_month=11), t)
+    assert r.spending[0] == p["S"] - 300.0

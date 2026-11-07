@@ -5,7 +5,7 @@ from typing import Mapping
 import pandas as pd
 
 from .config import EI_MONTHLY_CAP, MAX_RUNWAY, SIM_YEAR
-from .data import season
+from .data import DATA_END, season
 from .official import official_result
 from .shocks import Shock
 
@@ -49,7 +49,10 @@ def simulate(p: Mapping, shock: Shock, toggles: Toggles = Toggles()) -> SimResul
     loan_end = _loan_end(p) if toggles.loan_payoff and P > 0 else None
     start = pd.Period(f"{SIM_YEAR}-{shock.start_month:02d}", "M")
     if loan_end is not None and loan_end < start:
-        loan_end = None  # already finished: its payment is not in current spending
+        # Ended before the shock. If it was still running when the data ended (P > 0 by
+        # definition), S still contains the payment, so remove it from month 0. Loans that
+        # ended inside the data window have P = 0 and nothing to remove.
+        loan_end = start - 1 if loan_end > DATA_END else None
 
     pension_part = min(pension, I) if toggles.pension_kept else 0.0
     ei = shock.ei_rate * max(I - pension_part, 0.0)

@@ -29,12 +29,22 @@ For a layoff with EI at 55% for 6 months:
 | | Median runway | Customers under 3 months | Under 6 months |
 |---|---|---|---|
 | Official formula | 8.6 months | 435 | 1,578 |
-| Realistic, layoff in July | 5.7 months | 1,246 | 2,330 |
+| Realistic, layoff in July | 5.7 months | 1,240 | 2,325 |
 | Realistic, layoff in **January** | **5.0 months** | **1,552** | **2,579** |
 
-The cause is seasonal. Income bumps 1.49× in June and December (bonuses). Spending spikes **1.78× in January** and 1.50× in June, almost all of it cash withdrawals. A January layoff lands right after the bonus is spent, in the most expensive month of the year. On top of that, the EI cap applies to 57% of customers: 55% of their income is more than EI will pay.
+Two causes, shown step by step in the app's bridge chart (January layoff):
 
-**2. Short runway predicts real loan defaults.** The runway number measures something real:
+| Step | Median runway | Customers under 3 months |
+|---|---|---|
+| Official formula | 8.6 | 435 |
+| + the customer's own seasonal pattern | 6.0 | 827 |
+| + EI capped at $729/week | 4.9 | 1,555 |
+| + EI ending, pension kept, loan payoff | 5.0 | 1,552 |
+
+- **Seasonality takes 2–3 months off the median.** Income bumps 1.49× in June and December (bonuses), and spending spikes **1.78× in January** and 1.50× in June, almost all of it cash withdrawals. A January layoff lands right after the bonus is spent, in the most expensive month of the year.
+- **The EI cap roughly doubles the number of customers under 3 months.** For 57% of customers, 55% of their income is more than EI's $729/week maximum.
+
+**2. Short runway goes with loan default.** The runway number lines up with real outcomes:
 
 | Runway after a layoff (official) | Loans | Default rate (95% interval) |
 |---|---|---|
@@ -78,6 +88,7 @@ Data is not in the repo (`transactions.csv` is over GitHub's size limit). Put th
 - About half of transactions have no purpose label, so "discretionary" spending (cash, card, other transfers) is an approximation.
 - The realistic runway assumes past January and June cash spikes continue after a layoff. A careful customer could skip them, which is what the backup plan recommends.
 - `days_below_zero > 0` lines up with default 100% of the time. It is almost certainly a consequence of default, so we don't use it to predict.
+- The runway-vs-default table is an association, not a prediction: the buffer is measured at the end of 2025, after many loans had already finished or fallen behind, so a low balance can be a result of default rather than a cause.
 - Only 682 loans, so the default-rate bands have wide intervals (shown above).
 - 1,124 accounts have no labelled bills (F = 0). Their emergency-fund target uses total spending instead.
 

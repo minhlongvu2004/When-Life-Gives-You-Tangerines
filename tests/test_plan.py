@@ -16,8 +16,14 @@ def test_goal_plan_surplus():
 
 
 def test_goal_plan_deficit():
+    # cut must first close the $500 deficit, then free 10% of income ($400) to save
     g = goal_plan({**BASE, "I": 4000.0, "S": 4500.0})
-    assert g.monthly_saving == g.cut_needed == 400
+    assert g.cut_needed == 900 and g.monthly_saving == 400 and g.months_to_goal == 15.0
+
+
+def test_goal_plan_deficit_too_big_for_cuts():
+    g = goal_plan({**BASE, "I": 4000.0, "S": 7000.0, "D": 1000.0})
+    assert g.cut_needed == 1000 and g.monthly_saving == 0 and g.months_to_goal is None
 
 
 def test_goal_already_met():

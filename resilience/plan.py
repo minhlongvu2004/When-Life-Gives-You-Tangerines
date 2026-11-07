@@ -35,7 +35,9 @@ def goal_plan(p: Mapping, months_target: int = 6) -> GoalPlan:
     if surplus > 0:
         saving = 0.5 * surplus
     else:
-        saving = cut_needed = min(0.10 * I, D)
+        # close the deficit first, then free up 10% of income to save
+        cut_needed = min(-surplus + 0.10 * I, D)
+        saving = max(surplus + cut_needed, 0.0)
     if gap == 0:
         months = 0.0
     elif saving > 0:

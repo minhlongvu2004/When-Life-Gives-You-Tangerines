@@ -176,11 +176,17 @@ with engine:
         if g.gap == 0:
             st.success(md(f"Already there: buffer {money(p.B)} covers the {money(g.target)} target."))
         else:
-            how = (f"Save {money(g.monthly_saving)}/month (half of the {money(g.surplus)} monthly surplus)"
-                   if g.cut_needed == 0 else
-                   f"Spending is above income, so first cut {money(g.cut_needed)}/month of discretionary "
-                   f"spending and save it")
-            when = "" if g.months_to_goal is None else f" to reach it in about {g.months_to_goal:.0f} months"
+            if g.cut_needed == 0:
+                how = f"Save {money(g.monthly_saving)}/month (half of the {money(g.surplus)} monthly surplus)"
+            elif g.months_to_goal is None:
+                how = (f"Spending is {money(-g.surplus)}/month above income. Even cutting all "
+                       f"discretionary spending ({money(g.cut_needed)}/month) can't close that, so fixed "
+                       f"costs or income have to change first")
+            else:
+                how = (f"Spending is {money(-g.surplus)}/month above income: cut {money(g.cut_needed)}/month "
+                       f"of discretionary spending, which closes the gap and frees "
+                       f"{money(g.monthly_saving)}/month to save")
+            when = "" if g.months_to_goal is None else f", reaching the target in about {g.months_to_goal:.0f} months"
             st.write(md(f"Target {money(g.target)}; gap {money(g.gap)}. {how}{when}."))
     with pl[1]:
         st.markdown("**Backup: if the shock hits**")
@@ -212,14 +218,15 @@ with findings_tab:
 
     f1, f2 = st.columns(2)
     d = F["default"]
-    f1.markdown("**Short runway predicts loan default**")
+    f1.markdown("**Short runway goes with loan default**")
     bars = alt.Chart(d).mark_bar().encode(x=alt.X("band:N", sort=list(d.band), title="Runway after job loss (months)"),
                                           y=alt.Y("rate:Q", title="Default rate", axis=alt.Axis(format="%")),
                                           tooltip=["band", "n", "defaults", alt.Tooltip("rate:Q", format=".1%")])
     errs = alt.Chart(d).mark_errorbar().encode(x=alt.X("band:N", sort=list(d.band)), y="lo:Q", y2="hi:Q")
     f1.altair_chart((bars + errs).properties(height=260), use_container_width=True)
     f1.caption(f"{d.rate.iloc[0]:.0%} of loans default when runway is 3 months or less, vs "
-               f"{d.rate.iloc[2]:.0%} at 6–12 months (n = {', '.join(map(str, d.n))}; 95% intervals).")
+               f"{d.rate.iloc[2]:.0%} at 6–12 months (n = {', '.join(map(str, d.n))}; 95% intervals). "
+               "Association, not prediction: the buffer is measured at the end of 2025, after many loan outcomes.")
 
     s = F["seasonal"].melt("month", var_name="flow", value_name="factor")
     s["month"] = s.month.map(lambda m: MONTH_NAMES[m - 1])
@@ -228,7 +235,8 @@ with findings_tab:
         x=alt.X("month:N", sort=MONTH_NAMES, title=None), y=alt.Y("factor:Q", title="× the customer's typical month"),
         color=alt.Color("flow:N", title=None)).properties(height=260), use_container_width=True)
     f2.caption("Income bumps in June and December; cash spending spikes in January and June. "
-               "A shock in January lands right after the bonus is spent.")
+               "A shock in January lands right after the bonus is spent. Seasonality and the EI cap "
+               "are the two biggest reasons the realistic runway is shorter (see the bridge on the Engine tab).")
 
     fr, fl = F["fragile"], F["flags"]
     g1 = st.columns(3)
@@ -272,6 +280,7 @@ then card spending, each capped at the customer's own typical amount.
 - The data is the PKDD'99 Czech bank dataset (district names are Czech), relabelled as CAD and shifted to 2020–2025.
 - About half of transactions have no purpose label, so "discretionary" spending is an approximation.
 - `days_below_zero > 0` matches loan default 100% of the time; it is probably a result of default, so we do not use it as a predictor.
+- For the same reason, the runway-vs-default chart is an association: the buffer comes from late 2025, after many loans had already finished or fallen behind.
 - Seasonality assumes past January/June cash spikes continue after a job loss; a careful customer could cut them, which is exactly what the backup plan suggests.
 - Only 682 loans: the default-rate bands have wide intervals (shown).
 
