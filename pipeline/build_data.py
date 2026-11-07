@@ -166,9 +166,10 @@ def main():
     def fails(s):
         return float(np.mean([x is not None and x < 6 for x in s]))
 
-    def grp_stats(key):
+    def grp_stats(key, df=None):
+        df = m if df is None else df
         out = []
-        for k, sub in m.groupby(key, observed=True):
+        for k, sub in df.groupby(key, observed=True):
             out.append({
                 "group": str(k), "n": int(len(sub)),
                 "medianIncome": r2(sub.I.median()), "medianSpending": r2(sub.S.median()), "medianBuffer": r2(sub.B.median()),
@@ -216,11 +217,14 @@ def main():
 
     # featured accounts for the demo
     def pick(df, n=1):
-        return [int(x) for x in df.index[:n]]
-    hi = m[(m.incomeFifth == "Highest") & m.rwJob.apply(lambda v: v is not None and 1.5 < v < 4)].sort_values("I", ascending=False)
-    lo = m[(m.incomeFifth == "Lowest") & m.rwJob.apply(lambda v: v is not None and v >= 24) & ~m.isPensioner]
-    pens = m[m.isPensioner & m.rwJob.apply(lambda v: v is not None and v > 24)].sort_values("I")
-    tight = m[m.rwJob.apply(lambda v: v is not None and 0 < v < 1.5) & (m.P > 0)]
+        # the most typical member of the group (median income), not an outlier
+        df = df.sort_values("I")
+        return [int(df.index[len(df) // 2])] if len(df) else []
+    solid = (m.F > 0) & (m.H > 0) & (m.months >= 36)
+    hi = m[solid & (m.incomeFifth == "Highest") & m.rwJob.apply(lambda v: v is not None and 1.5 < v < 4)].sort_values("I", ascending=False)
+    lo = m[solid & (m.incomeFifth == "Lowest") & m.rwJob.apply(lambda v: v is not None and v >= 24) & ~m.isPensioner]
+    pens = m[solid & m.isPensioner & m.rwJob.apply(lambda v: v is not None and v > 24)].sort_values("I")
+    tight = m[solid & m.rwJob.apply(lambda v: v is not None and 0 < v < 1.5) & (m.P > 0)]
     featured = [
         {"id": a, "label": "High earner, thin buffer"} for a in pick(hi)
     ] + [{"id": a, "label": "Modest income, deep savings"} for a in pick(lo)] + \
@@ -232,6 +236,9 @@ def main():
         "eiMonthlyCap": EI_MONTHLY_CAP,
         "byFifth": grp_stats("incomeFifth"),
         "byTenth": grp_stats("incomeTenth"),
+        "byFifthWorkers": grp_stats("incomeFifth", m[~m.isPensioner]),
+        "byTenthWorkers": grp_stats("incomeTenth", m[~m.isPensioner]),
+        "nPensioners": int(m.isPensioner.sum()),
         "nonPensionerFailJudge": r2(fails(non_p.rwJob)), "nonPensionerFailReal": r2(fails(non_p.rwJobReal)),
         "allFailJudge": r2(fails(m.rwJob)), "allFailReal": r2(fails(m.rwJobReal)),
         "twists": twists,

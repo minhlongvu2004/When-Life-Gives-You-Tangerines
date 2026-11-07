@@ -1,12 +1,14 @@
 {
-  "name": "app",
+  "name": "when-life-gives-you-tangerines",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "demo": "next build && python -m http.server 3000 -d out"
   },
   "dependencies": {
     "framer-motion": "^11.18.2",

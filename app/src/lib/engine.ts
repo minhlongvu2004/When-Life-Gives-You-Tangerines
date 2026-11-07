@@ -139,8 +139,9 @@ export function pct(x: number): string {
 
 /** Month-by-month balance path: shock lasts `durationMonths`, then the baseline resumes. */
 export function balancePath(m: Metrics, s: Shock, mode: Mode, lv: Levers, horizon = 18) {
+  // levers (spending cuts, loan deferral) only apply while the shock lasts
   const shocked = scenario(m, s, mode, lv);
-  const base = scenario(m, NO_SHOCK, mode, lv);
+  const base = scenario(m, NO_SHOCK, mode);
   const pts: { month: number; balance: number; baseline: number }[] = [];
   let bal = m.B - shocked.oneOff;
   let baseBal = m.B;
@@ -226,6 +227,12 @@ export function goalPlan(m: Metrics, mode: Mode, saveShare = 0.5): GoalPlan {
   return { target, targetReason, current: m.B, shortfall, surplus, cutNeeded, monthly, monthsToGoal, steps: milestones };
 }
 
+export const BACKUP_TRIM = 0.1;
+export const BACKUP_SURVIVAL = 0.25;
+export function fullPlanLevers(m: Metrics): Levers {
+  return { discCut: m.disc > 0 ? BACKUP_SURVIVAL : 0, pauseLoan: m.P > 0 };
+}
+
 export interface BackupStep {
   label: string;
   detail: string;
@@ -243,16 +250,15 @@ export function backupPlan(m: Metrics, s: Shock, mode: Mode): BackupStep[] {
   };
   add("As things stand", "Shock hits, no changes", NO_LEVERS);
   if (m.disc > 0)
-    add(
-      "Trim discretionary 25%",
-      `Card & cash spending and other transfers: −$${fmt(0.25 * m.disc)}/mo`,
-      { discCut: 0.25, pauseLoan: false },
-    );
+    add("Trim flexible spending 10%", `Card & cash spending, other transfers: −$${fmt(BACKUP_TRIM * m.disc)}/mo`, {
+      discCut: BACKUP_TRIM,
+      pauseLoan: false,
+    });
   if (m.P > 0)
-    add("Ask to defer the loan payment", `Payment deferral frees $${fmt(m.P)}/mo`, { discCut: 0.25, pauseLoan: true });
+    add("Ask to defer the loan payment", `A payment deferral frees $${fmt(m.P)}/mo`, { discCut: BACKUP_TRIM, pauseLoan: true });
   if (m.disc > 0)
-    add("Survival mode: cut discretionary 50%", `Essentials only: −$${fmt(0.5 * m.disc)}/mo`, {
-      discCut: 0.5,
+    add("Survival mode: cut flexible spending 25%", `Must-pays only: −$${fmt(BACKUP_SURVIVAL * m.disc)}/mo`, {
+      discCut: BACKUP_SURVIVAL,
       pauseLoan: m.P > 0,
     });
   return steps;
