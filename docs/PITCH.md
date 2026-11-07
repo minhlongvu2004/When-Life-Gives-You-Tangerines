@@ -4,7 +4,8 @@ Judging: Discovery 35% · Data Use 25% · Communication 25% · Impact 15%. About
 
 ## Before you walk up (setup checklist)
 
-- [ ] `cd app && npm run demo`, then open http://localhost:3000. Use the production build: it loads instantly and needs no internet.
+- [ ] **Well before judging:** `cd app && npm install && npm run build`. This takes about 30 seconds and needs internet only for `npm install`.
+- [ ] **At the table:** `cd app && npm run serve`, then open http://localhost:3000. It loads instantly and needs no internet. Don't use `npm run dev` for judging: its first page load takes about 30 seconds.
 - [ ] Browser zoom at 110–125% so judges can read it. Close other tabs.
 - [ ] Open three tabs: **Engine** (`/?id=52783`), **The finding** (`/finding`) and **Method** (`/method`).
 - [ ] Mode toggle on **Judge definitions**.

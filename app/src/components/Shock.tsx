@@ -235,13 +235,21 @@ export function ShockSection({
               {hasShock && (
                 v.survives ? (
                   <StatusBadge kind="good">Makes it through {shock.durationMonths} months</StatusBadge>
+                ) : v.wipedOut ? (
+                  <StatusBadge kind="critical">Can&apos;t cover the one-off cost</StatusBadge>
                 ) : (
                   <StatusBadge kind="critical">Runs out {v.monthsShort.toFixed(1)} months early</StatusBadge>
                 )
               )}
               <div className="text-right text-xs text-ink-2">
-                {hasShock && v.survives && sc.runway !== null && <>Buffer left after {shock.durationMonths} mo: <b className="tnum text-ink">{money(v.spare)}</b></>}
-                {hasShock && !v.survives && <>Needs <b className="tnum text-ink">{money(v.moneyNeeded)}</b> more buffer to last</>}
+                {hasShock && v.survives && <>Buffer left after {shock.durationMonths} mo: <b className="tnum text-ink">{money(v.spare)}</b></>}
+                {hasShock && v.wipedOut && (
+                  <>
+                    Buffer is <b className="tnum text-ink">{money(v.shortToday)}</b> short the day it hits
+                    {sc.gap > 0 && <>; needs {money(v.moneyNeeded)} to last {shock.durationMonths} mo</>}
+                  </>
+                )}
+                {hasShock && !v.survives && !v.wipedOut && <>Needs <b className="tnum text-ink">{money(v.moneyNeeded)}</b> more buffer to last</>}
               </div>
               <div className="rounded-lg bg-surface-2 px-2.5 py-1 text-right text-xs text-ink-2">
                 {mode === "judge" ? "Realistic" : "Judge formula"}: <b className="tnum text-ink">{runwayText(other.runway)}</b> mo

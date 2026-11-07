@@ -160,10 +160,25 @@ export interface Verdict {
   monthsShort: number; // 0 if survives
   moneyNeeded: number; // extra buffer needed to last the duration
   spare: number; // buffer left at end of duration if survives
+  wipedOut: boolean; // one-off costs alone empty the buffer (runway 0)
+  shortToday: number; // how far below zero the buffer is right after one-off costs
 }
 
 export function verdict(sc: Scenario, durationMonths: number): Verdict {
-  if (sc.runway === null) return { survives: true, monthsShort: 0, moneyNeeded: 0, spare: sc.bufferLeft - Math.min(sc.gap, 0) * durationMonths };
+  if (sc.bufferLeft <= 0) {
+    // the one-off cost can't be covered: runway is 0 regardless of the monthly gap
+    const shortToday = -sc.bufferLeft;
+    return {
+      survives: false,
+      monthsShort: durationMonths,
+      moneyNeeded: shortToday + Math.max(sc.gap, 0) * durationMonths,
+      spare: 0,
+      wipedOut: true,
+      shortToday,
+    };
+  }
+  if (sc.runway === null)
+    return { survives: true, monthsShort: 0, moneyNeeded: 0, spare: sc.bufferLeft - sc.gap * durationMonths, wipedOut: false, shortToday: 0 };
   const need = sc.gap * durationMonths;
   const survives = sc.runway >= durationMonths;
   return {
@@ -171,6 +186,8 @@ export function verdict(sc: Scenario, durationMonths: number): Verdict {
     monthsShort: survives ? 0 : Math.max(0, durationMonths - sc.runway),
     moneyNeeded: survives ? 0 : Math.max(0, need - sc.bufferLeft),
     spare: survives ? sc.bufferLeft - need : 0,
+    wipedOut: false,
+    shortToday: 0,
   };
 }
 
@@ -185,6 +202,8 @@ export interface GoalPlan {
   cutNeeded: number; // discretionary cut (share) needed to create a surplus, if no surplus
   monthly: number; // suggested monthly contribution
   monthsToGoal: number | null;
+  fastMonthly: number;
+  fastMonths: number | null;
   steps: { label: string; amount: number; month: number | null }[];
 }
 
@@ -213,6 +232,9 @@ export function goalPlan(m: Metrics, mode: Mode, saveShare = 0.5): GoalPlan {
     monthly = Math.max(0, cutNeeded * m.disc + surplus);
   }
   const monthsToGoal = shortfall === 0 ? 0 : monthly > 0 ? Math.ceil(shortfall / monthly) : null;
+  // faster route: also redirect 10% of flexible spending into savings
+  const fastMonthly = monthly + BACKUP_TRIM * m.disc;
+  const fastMonths = shortfall > 0 && m.disc > 0 && fastMonthly > 0 ? Math.ceil(shortfall / fastMonthly) : null;
   const milestones = [
     { label: "1 month of spending", amount: m.S },
     { label: "3 months of fixed costs", amount: threeMonthsFixed },
@@ -224,7 +246,7 @@ export function goalPlan(m: Metrics, mode: Mode, saveShare = 0.5): GoalPlan {
       ...x,
       month: x.amount <= m.B ? 0 : monthly > 0 ? Math.ceil((x.amount - m.B) / monthly) : null,
     }));
-  return { target, targetReason, current: m.B, shortfall, surplus, cutNeeded, monthly, monthsToGoal, steps: milestones };
+  return { target, targetReason, current: m.B, shortfall, surplus, cutNeeded, monthly, monthsToGoal, fastMonthly, fastMonths, steps: milestones };
 }
 
 export const BACKUP_TRIM = 0.1;

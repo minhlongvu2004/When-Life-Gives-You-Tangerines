@@ -33,7 +33,8 @@ python pipeline/build_data.py path/to/data      # folder with monthly_summary.cs
 # 2. run the app
 cd app
 npm install
-npm run demo        # production build, served at http://localhost:3000  (best for live judging)
+npm run build       # once, ahead of time (~30 s)
+npm run serve       # serves the build at http://localhost:3000 (use this for live judging)
 # or: npm run dev   # hot-reload dev server
 npm test            # golden test + twist-card parser tests
 ```

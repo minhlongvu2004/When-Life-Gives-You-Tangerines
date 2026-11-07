@@ -15,7 +15,10 @@ export interface ParsedTwist {
 }
 
 export function parseTwist(text: string): ParsedTwist {
-  const t = " " + text.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, " ") + " ";
+  const t = (" " + text.toLowerCase() + " ")
+    .replace(/[’‘]/g, "'")
+    .replace(/\s*(?:per ?cent|pct)\b/g, "%")
+    .replace(/\s+/g, " ");
   const s: Shock = { ...NO_SHOCK };
   const understood: string[] = [];
   let m: RegExpMatchArray | null;
@@ -52,7 +55,7 @@ export function parseTwist(text: string): ParsedTwist {
   // --- one-off costs ---
   const oneOffWord = /(repair|furnace|roof|car|vehicle|transmission|emergency|surprise|unexpected|vet|dental|medical|hospital|funeral|flood|fire|one[- ]off|one[- ]time|bill of|costs?)/;
   if (oneOffWord.test(t)) {
-    if ((m = t.match(new RegExp(String.raw`${NUM}\s+(?:full\s+)?months?(?:'s)?\s+(?:of\s+)?(?:their\s+|his\s+|her\s+)?(?:typical\s+|usual\s+|normal\s+|average\s+)?(?:spending|expenses|costs|money out|outgoings)`)))) {
+    if ((m = t.match(new RegExp(String.raw`${NUM}\s+(?:full\s+)?months?(?:'s|')?\s+(?:worth\s+)?(?:of\s+)?(?:their\s+|his\s+|her\s+)?(?:typical\s+|usual\s+|normal\s+|average\s+)?(?:spending|expenses|costs|money out|outgoings)`)))) {
       s.oneOffMult = num(m[1]);
       understood.push(`One-off cost = ${s.oneOffMult}× typical monthly spending`);
     } else if ((m = t.match(/(?:repair|furnace|roof|car|bill|costs?|pay|vet|dental|medical|emergency)[^.]*?\$\s?(\d[\d,]*(?:\.\d+)?)\s*(k)?/)) && !/(?:a|per|\/)\s*month/.test(t.slice(t.indexOf(m[0]) + m[0].length, t.indexOf(m[0]) + m[0].length + 12))) {

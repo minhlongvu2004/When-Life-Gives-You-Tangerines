@@ -30,7 +30,7 @@ export function Engine() {
       if (!metrics) return;
       const n = Number(String(raw).trim());
       if (!Number.isInteger(n) || !metrics.has(n)) {
-        setError(`No account ${String(raw).trim() || "(blank)"}. IDs look like 20111 to 99995.`);
+        setError(`No account ${String(raw).trim() || "(blank)"}. IDs run from 20111 to 99984.`);
         return;
       }
       setError("");

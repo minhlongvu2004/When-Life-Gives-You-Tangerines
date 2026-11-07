@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { decodeMetrics, formatRunway, NO_SHOCK, pyRound1, runway, scenario, type MetricsFile } from "./engine";
+import { decodeMetrics, formatRunway, NO_SHOCK, pyRound1, runway, scenario, verdict, type MetricsFile } from "./engine";
 
 const root = join(__dirname, "..", "..");
 const metrics = decodeMetrics(JSON.parse(readFileSync(join(root, "public", "data", "metrics.json"), "utf8")) as MetricsFile);
@@ -35,5 +35,25 @@ describe("golden: TS engine == Python reference for every account and twist", ()
     }
     expect(bad.slice(0, 10)).toEqual([]);
     expect(metrics.size).toBe(4500);
+  });
+});
+
+describe("verdict", () => {
+  it("one-off bigger than buffer (52783 furnace): wiped out, short today, never $0 needed", () => {
+    const m = metrics.get(52783)!;
+    const sc = scenario(m, { ...NO_SHOCK, oneOffMult: 1 }, "judge");
+    expect(sc.runway).toBe(0);
+    const v = verdict(sc, 6);
+    expect(v.wipedOut).toBe(true);
+    expect(v.survives).toBe(false);
+    expect(v.shortToday).toBeCloseTo(m.S - m.B, 6);
+    expect(v.moneyNeeded).toBeGreaterThan(0);
+  });
+  it("job loss on 52783 runs out early and needs money", () => {
+    const m = metrics.get(52783)!;
+    const v = verdict(scenario(m, { ...NO_SHOCK, incomePct: 0.55, jobLoss: true }, "judge"), 6);
+    expect(v.survives).toBe(false);
+    expect(v.wipedOut).toBe(false);
+    expect(v.moneyNeeded).toBeGreaterThan(0);
   });
 });

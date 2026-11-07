@@ -76,6 +76,12 @@ export function PlanSection({ m, mode, shock }: { m: Metrics; mode: Mode; shock:
                 <Mini label="Save each month" value={g.monthly > 0 ? money(g.monthly) : "—"} />
                 <Mini label="Fully funded in" value={g.monthsToGoal === null ? "—" : `${g.monthsToGoal} mo`} />
               </div>
+              {g.fastMonths !== null && (g.monthsToGoal === null || g.monthsToGoal > 18) && g.fastMonths < (g.monthsToGoal ?? Infinity) && (
+                <p className="mt-3 rounded-xl bg-accent-soft px-3 py-2 text-sm">
+                  <b>Faster route:</b> also move 10% of flexible spending ({money(g.fastMonthly - g.monthly)}/mo) into savings. That&apos;s{" "}
+                  <b className="tnum">{money(g.fastMonthly)}</b>/mo, fully funded in <b className="tnum">{g.fastMonths} months</b>.
+                </p>
+              )}
               <ol className="mt-4 space-y-2">
                 {g.steps.map((s) => (
                   <li key={s.label} className="flex items-center gap-3 text-sm">
@@ -138,6 +144,8 @@ export function PlanSection({ m, mode, shock }: { m: Metrics; mode: Mode; shock:
               <span className="text-ink-2">With the full plan:</span>
               {finalOk ? (
                 <StatusBadge kind="good">Makes it through {shock.durationMonths} months</StatusBadge>
+              ) : final.runway === 0 ? (
+                <StatusBadge kind="critical">The one-off cost is bigger than the buffer</StatusBadge>
               ) : (
                 <StatusBadge kind="critical">Still runs out at {formatRunway(final.runway)} months</StatusBadge>
               )}
@@ -146,7 +154,9 @@ export function PlanSection({ m, mode, shock }: { m: Metrics; mode: Mode; shock:
           {hasShock && !finalOk && (
             <p className="mt-2 flex items-start gap-1.5 text-xs text-ink-2">
               <ArrowRight className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-              Cutting spending alone isn&apos;t enough here. The fix is the goal plan on the left: a bigger buffer before the shock arrives.
+              {final.runway === 0
+                ? "Monthly cuts can't pay a bill that's due today. Options: spread the repair over a payment plan, or build the emergency fund on the left first."
+                : "Cutting spending alone isn't enough here. The fix is the goal plan on the left: a bigger buffer before the shock arrives."}
             </p>
           )}
         </Card>

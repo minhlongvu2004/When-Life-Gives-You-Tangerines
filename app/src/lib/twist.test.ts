@@ -30,4 +30,14 @@ describe("parseTwist", () => {
   it("pay cut", () => {
     expect(parseTwist("Their hours are cut and income drops 30%.").shock.incomePct).toBeCloseTo(0.7);
   });
+  it("percent spelled out", () => {
+    expect(parseTwist("Household bills go up 15 percent.").shock.billsPct).toBeCloseTo(0.15);
+    expect(parseTwist("Rent rises 10 per cent.").shock.billsPct).toBeCloseTo(0.1);
+  });
+  it("months' worth of spending", () => {
+    expect(parseTwist("A surprise repair costs two months' worth of spending.").shock.oneOffMult).toBe(2);
+  });
+  it("EI at 55 percent", () => {
+    expect(parseTwist("Laid off; EI pays 55 percent of usual income for 6 months.").shock).toMatchObject({ incomePct: 0.55, durationMonths: 6 });
+  });
 });
