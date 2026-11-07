@@ -12,7 +12,8 @@
 
 ## Global Constraints
 
-- Data path: env var `TANGERINE_DATA`, default `../Datasets/Datasets/Tangerine/data` relative to the repo root. Data is never committed.
+- Data path: env var `TANGERINE_DATA` if set; else `data/` in the repo root if it exists (the team repo's `.gitignore` convention); else `../Datasets/Datasets/Tangerine/data` relative to the repo root. Data is never committed.
+- Team repo: `origin` = https://github.com/minhlongvu2004/When-Life-Gives-You-Tangerines (branch `main`). Keep the teammate's `TANGERINE.md` and `.gitignore` entries; only add to them.
 - Official definitions are copied verbatim from the track README: I = median `money_in`; F = median `household_bills + insurance + loan_payments`; S = median `money_out`; B = mean `avg_daily_balance` over the account's last 6 rows sorted by month; H = median `household_bills`; P = `monthly_payment` if the loan is still running at end of 2025, else 0.
 - Runway: 0 if `buffer_left <= 0`; 120 ("no shortfall (120+)") if `gap <= 0`; else `min(buffer_left / gap, 120)`; rounded to 1 decimal.
 - Realistic simulation starts in calendar month `start_month` of 2026 and runs at most 120 months.
