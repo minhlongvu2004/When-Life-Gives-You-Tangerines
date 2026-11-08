@@ -17,6 +17,9 @@
   --accent-ink: #c24e0e;
   --accent-soft: #fdeadd;
   --series-1: #27455c;
+  --series-1-soft: #e6edf2;
+  --warn-soft: #fdf0dc;
+  --warn-text: #9a5a00;
   --series-2: #f2691d;
   --good: #6cc04a;
   --good-text: #2f7d14;
@@ -55,6 +58,9 @@
   --accent-ink: #ff9a5c;
   --accent-soft: rgba(242, 105, 29, 0.16);
   --series-1: #7fa7cc;
+  --series-1-soft: rgba(127, 167, 204, 0.14);
+  --warn-soft: rgba(251, 191, 36, 0.14);
+  --warn-text: #fcd34d;
   --series-2: #f2691d;
   --good: #4ade80;
   --good-text: #86efac;
@@ -90,6 +96,9 @@
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
   --color-s1: var(--series-1);
+  --color-s1-soft: var(--series-1-soft);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-text: var(--warn-text);
   --color-s2: var(--series-2);
   --color-good: var(--good);
   --color-good-text: var(--good-text);
@@ -385,4 +394,14 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
   html.theme-fade * {
     transition: none !important;
   }
+}
+
+/* Ask about this plan: panel pop-in and typing dots */
+@keyframes askpop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes askblink {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
 }

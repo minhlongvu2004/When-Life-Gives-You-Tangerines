@@ -10,7 +10,7 @@ const now = { y: 2026, m: 11 };
 const flat: Assumptions = { delayMonths: 0, upsidePct: 100, costPct: 100, expensePct: 100, inflationPct: 0 };
 const m: Metrics = {
   id: 1, I: 5000, F: 1500, S: 4000, B: 10000, H: 1200, P: 0, ins: 0, loanPay: 0, disc: 1500, card: 0, cash: 1500, xfer: 0,
-  fees: 0, pension: 0, nonPensionI: 5000, region: "x", incomeCV: null, months: 30,
+  fees: 0, pension: 0, nonPensionI: 5000, lean: 1000, unemp: 5, region: "x", incomeCV: null, months: 30,
 };
 const none: Compiled = { start: 1, streams: [], oneOffs: [], events: [], derived: [] };
 const goal = (p: Partial<Goal>): Goal => ({ id: "g", template: "custom", name: "Goal", target: 1000, targetDate: "2027-11", priority: "medium", spend: false, ...p });

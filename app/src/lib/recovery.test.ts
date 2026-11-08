@@ -195,7 +195,7 @@ import { durationWords, essentialsBasis, monthlyBridge, planDefs, recoveryInputs
 
 const m: Metrics = {
   id: 1, I: 4800, F: 2200, S: 4300, B: 6000, H: 1700, P: 350, ins: 150, loanPay: 350, disc: 2100,
-  card: 700, cash: 700, xfer: 700, fees: 0, pension: 0, nonPensionI: 4800, region: "test", incomeCV: null, months: 36,
+  card: 700, cash: 700, xfer: 700, fees: 0, pension: 0, nonPensionI: 4800, lean: 2100, unemp: 5, region: "test", incomeCV: null, months: 36,
 };
 const jobLoss: Shock = { ...NO_SHOCK, jobLoss: true, incomePct: 0.55, durationMonths: 6 };
 const plan = (mm: Metrics, key: string) => planDefs(mm).find((p) => p.key === key)!;

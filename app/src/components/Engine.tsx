@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadClientMap, loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
 import { parseId, resolveId, type ClientRole, type Resolved } from "@/lib/ids";
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
+import { effectiveShock } from "@/lib/planCards";
+import { AskPanel } from "./AskPanel";
 import { StepCustomer, StepShock, type Peers } from "./guided";
 import { StepPlan } from "./RecoveryPlan";
 import { StepBoundary } from "./StepBoundary";
@@ -162,6 +164,7 @@ export function Engine() {
           {step === 2 && <StepPlan m={m} mode={mode} shock={shock} rows={rows} onRestart={close} />}
         </StepBoundary>
       </motion.div>
+      {step === 2 && <AskPanel m={m} shock={effectiveShock(shock)} mode={mode} />}
     </div>
   );
 }
