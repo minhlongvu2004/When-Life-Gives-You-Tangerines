@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { loadFindings, usePromise, type GroupStat } from "@/lib/data";
 import { money } from "@/lib/engine";
-import { SheetButton } from "./guided";
+import { SheetButton } from "./Sheet";
 import { LegendKey, Segmented } from "./ui";
 
 const axis = { stroke: "var(--axis)", tick: { fill: "var(--muted)", fontSize: 12 }, tickLine: false } as const;

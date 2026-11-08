@@ -9,7 +9,7 @@ import { cad, monthName, parseYM, MONTHS, type Assumptions, type ScenarioDef, ty
 import { summarize, type Future, type Milestone, type Summary } from "@/lib/whatif/simulate";
 import type { Chapter, Tip } from "@/lib/whatif/story";
 import { AnimatedNumber } from "../ui";
-import { FUTURE, FutureDot, Panel, SectionHead, Source } from "./bits";
+import { FUTURE, FutureDot, Panel, Source } from "./bits";
 import { PriorityChip } from "./inputs";
 
 type Which = "well" | "bad";
@@ -29,11 +29,11 @@ const compact = (v: number) => {
 
 function Row({ label, value, sub, tone }: { label: string; value: ReactNode; sub?: ReactNode; tone?: "good" | "bad" }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-line py-2 last:border-0">
-      <span className="text-sm text-ink-2">{label}</span>
+    <div className="flex items-baseline justify-between gap-3 border-b border-line py-1 text-sm last:border-0">
+      <span className="text-xs text-ink-2">{label}</span>
       <span className="text-right">
         <span className={`tnum font-semibold ${tone === "bad" ? "text-critical-text" : tone === "good" ? "text-good-text" : ""}`}>{value}</span>
-        {sub && <span className="block text-xs text-muted">{sub}</span>}
+        {sub && <span className="block text-[10px] text-muted">{sub}</span>}
       </span>
     </div>
   );
@@ -41,7 +41,7 @@ function Row({ label, value, sub, tone }: { label: string; value: ReactNode; sub
 
 export function FutureCards({ well, bad, h, now, wellMs, badMs }: { well: Future; bad: Future; h: number; now: YM; wellMs: Milestone[]; badMs: Milestone[] }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-2.5">
       {WHICH.map((w, i) => {
         const f = w === "well" ? well : bad;
         const s = summarize(f, h);
@@ -49,19 +49,21 @@ export function FutureCards({ well, bad, h, now, wellMs, badMs }: { well: Future
         const reached = s.goals.filter((g) => g.reachedByH).length;
         return (
           <motion.div key={w} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.1 }}>
-            <Panel className={`${FUTURE[w].card} h-full`}>
-              <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: FUTURE[w].ink }}>
-                <FutureDot which={w} /> {FUTURE[w].tag} · {FUTURE[w].name}
+            <div className={`wf-card ${FUTURE[w].card} p-3`}>
+              <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: FUTURE[w].ink }}>
+                <FutureDot which={w} size={8} /> {FUTURE[w].tag} · {FUTURE[w].name}
               </div>
-              <div className="mt-3 text-xs text-muted">Projected savings in {monthName(now, h)}</div>
-              <div className={`text-4xl font-semibold tracking-tight ${s.balance < 0 ? "text-critical-text" : ""}`}>
-                <AnimatedNumber value={s.balance} format={(v) => cad(v)} />
+              <div className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-2">
+                <span className="text-[11px] text-muted">Projected savings, {monthName(now, h)}</span>
+                <span className={`text-2xl font-semibold tracking-tight ${s.balance < 0 ? "text-critical-text" : ""}`}>
+                  <AnimatedNumber value={s.balance} format={(v) => cad(v)} />
+                </span>
               </div>
-              <div className="mt-1 text-sm text-ink-2">
-                {s.balance >= s.start ? "Up" : "Down"} {cad(Math.abs(s.balance - s.start))} from {cad(s.start)} today
+              <div className="text-[11px] text-ink-2">
+                {s.balance >= s.start ? "Up" : "Down"} {cad(Math.abs(s.balance - s.start))} from {cad(s.start)} at the start (Dec 2025 data)
               </div>
 
-              <div className="mt-4">
+              <div className="mt-1.5">
                 <Row label="Projected monthly income" value={<AnimatedNumber value={s.income} format={(v) => `${cad(v)}/mo`} />} />
                 <Row label="Projected monthly expenses" value={<AnimatedNumber value={s.expenses} format={(v) => `${cad(v)}/mo`} />} />
                 <Row
@@ -79,14 +81,14 @@ export function FutureCards({ well, bad, h, now, wellMs, badMs }: { well: Future
                 <Row
                   label="Lowest point"
                   value={cad(s.low.balance)}
-                  sub={s.low.t ? monthName(now, s.low.t) : "today"}
+                  sub={s.low.t ? monthName(now, s.low.t) : "at the start"}
                   tone={s.low.balance < 0 ? "bad" : undefined}
                 />
                 {s.goals.length > 0 && <Row label="Goals reached" value={`${reached} of ${s.goals.length}`} tone={reached === s.goals.length ? "good" : undefined} />}
               </div>
 
               {s.goals.length > 0 && (
-                <div className="mt-4 space-y-2.5">
+                <div className="mt-2 space-y-1.5">
                   {s.goals.map((g) => (
                     <div key={g.outcome.goal.id}>
                       <div className="mb-1 flex justify-between gap-2 text-xs">
@@ -114,11 +116,11 @@ export function FutureCards({ well, bad, h, now, wellMs, badMs }: { well: Future
               )}
 
               {ms.length > 0 && (
-                <div className="mt-5">
-                  <div className="mb-2 text-xs font-semibold tracking-wide text-muted uppercase">Milestones</div>
-                  <ol className="space-y-1.5">
-                    {ms.slice(0, 5).map((m, j) => (
-                      <li key={j} className="flex gap-2.5 text-sm">
+                <div className="mt-2">
+                  <div className="mb-1 text-[10px] font-semibold tracking-wide text-muted uppercase">Milestones</div>
+                  <ol className="space-y-1">
+                    {ms.slice(0, 3).map((m, j) => (
+                      <li key={j} className="flex gap-2 text-xs">
                         <span className="tnum w-14 shrink-0 text-xs leading-5 text-muted">{monthName(now, m.t, true)}</span>
                         <MilestoneIcon m={m} which={w} />
                         <span className="min-w-0 text-ink-2">
@@ -126,11 +128,11 @@ export function FutureCards({ well, bad, h, now, wellMs, badMs }: { well: Future
                         </span>
                       </li>
                     ))}
-                    {ms.length > 5 && <li className="pl-16 text-xs text-muted">+{ms.length - 5} more on the map above</li>}
+                    {ms.length > 3 && <li className="pl-16 text-[11px] text-muted">+{ms.length - 3} more on the map</li>}
                   </ol>
                 </div>
               )}
-            </Panel>
+            </div>
           </motion.div>
         );
       })}
@@ -159,21 +161,18 @@ export function SavingsChart({ well, bad, h, now }: { well: Future; bad: Future;
   const goalsAt = (t: number) => goalDots.filter((d) => d.t === t);
   const anyNeg = data.some((d) => d.well < 0 || d.bad < 0);
   return (
-    <Panel className="h-full">
-      <SectionHead
-        title="Savings projection"
-        sub="Your savings balance month by month in each future"
-        right={
-          <div className="flex flex-wrap gap-3 text-xs text-ink-2">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">Savings projection</h3>
+          <div className="flex flex-wrap gap-3 text-[11px] text-ink-2">
             <LineKey which="well" />
             <LineKey which="bad" dashed />
             <span className="flex items-center gap-1.5">
               <Flag className="size-3.5" aria-hidden /> goal reached
             </span>
           </div>
-        }
-      />
-      <div className="h-72">
+      </div>
+      <div className="min-h-[160px] flex-1">
         <ResponsiveContainer>
           <LineChart data={data} margin={{ top: 12, right: 70, bottom: 0, left: 4 }}>
             <CartesianGrid vertical={false} stroke="var(--grid)" />
@@ -182,7 +181,7 @@ export function SavingsChart({ well, bad, h, now }: { well: Future; bad: Future;
               type="number"
               domain={[0, h]}
               ticks={tickList(h)}
-              tickFormatter={(t: number) => (t === 0 ? "Today" : monthName(now, t, true))}
+              tickFormatter={(t: number) => (t === 0 ? "Start" : monthName(now, t, true))}
               stroke="var(--axis)"
               tick={{ fill: "var(--muted)", fontSize: 11 }}
               tickLine={false}
@@ -198,7 +197,7 @@ export function SavingsChart({ well, bad, h, now }: { well: Future; bad: Future;
                 const gs = goalsAt(t);
                 return (
                   <div className="rounded-xl border border-line bg-surface px-3 py-2 text-xs shadow-xl">
-                    <div className="mb-1 font-semibold text-ink">{t === 0 ? "Today" : monthName(now, t)}</div>
+                    <div className="mb-1 font-semibold text-ink">{t === 0 ? `Start (${monthName(now, 0)} data)` : monthName(now, t)}</div>
                     {WHICH.map((w) => (
                       <div key={w} className="flex items-center gap-2 text-ink-2">
                         <FutureDot which={w} size={8} />
@@ -249,7 +248,7 @@ export function SavingsChart({ well, bad, h, now }: { well: Future; bad: Future;
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </Panel>
+    </div>
   );
 }
 
@@ -277,21 +276,21 @@ export function GoalTimeline({ well, bad, h, now }: { well: Future; bad: Future;
   const sw = summarize(well, h);
   const sb = summarize(bad, h);
   return (
-    <Panel className="h-full">
-      <SectionHead title="Goal achievement timeline" sub={`When each goal is reached, and how far along it is by ${monthName(now, h)}`} />
+    <div>
+      <div className="mb-1.5 text-xs font-semibold">Goal outcomes by {monthName(now, h)}</div>
       {!sw.goals.length ? (
-        <div className="rounded-2xl border border-dashed border-line px-4 py-10 text-center text-sm text-muted">
-          No goals yet. Use <span className="font-semibold text-ink">Rewrite My Future</span> to add one.
+        <div className="rounded-xl border border-dashed border-line px-3 py-4 text-center text-xs text-muted">
+          No goals yet. Add one in the <span className="font-semibold text-ink">Goals</span> tab on the left.
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {sw.goals.map((gw, i) => {
             const gb = sb.goals[i];
             const g = gw.outcome.goal;
             return (
-              <div key={g.id} className="rounded-2xl bg-[var(--wf-card-2)] p-3.5">
-                <div className="mb-2.5 flex flex-wrap items-center gap-2">
-                  <span className="font-semibold">{g.name}</span>
+              <div key={g.id} className="rounded-xl bg-[var(--wf-card-2)] p-2.5">
+                <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold">{g.name}</span>
                   <PriorityChip p={g.priority} />
                   <span className="tnum ml-auto text-xs text-muted">
                     {cad(g.target)} by {ymLabel(g.targetDate)}
@@ -308,7 +307,7 @@ export function GoalTimeline({ well, bad, h, now }: { well: Future; bad: Future;
           })}
         </div>
       )}
-    </Panel>
+    </div>
   );
 }
 
@@ -327,7 +326,7 @@ function GoalBar({ which, s, h, now }: { which: Which; s: Summary["goals"][numbe
   else if (s.dipped) text = <>Reached, then drawn down to {Math.round(s.progress * 100)}%</>;
   else text = r === null ? "Not within 5 years" : <>Not by {monthName(now, h, true)} · lands {monthName(now, r)}</>;
   return (
-    <div className="mt-1.5 grid grid-cols-[6.5rem_1fr] items-center gap-3 sm:grid-cols-[7.5rem_1fr_12rem]">
+    <div className="mt-1 grid grid-cols-[5.5rem_1fr] items-center gap-x-2 gap-y-0.5">
       <span className="flex items-center gap-1.5 text-xs" style={{ color: FUTURE[which].ink }}>
         <FutureDot which={which} size={7} /> {which === "well" ? "Goes well" : "Goes badly"}
       </span>
@@ -341,7 +340,7 @@ function GoalBar({ which, s, h, now }: { which: Which; s: Summary["goals"][numbe
         />
       </div>
       <span
-        className={`tnum col-span-2 flex items-center gap-1 text-xs sm:col-span-1 ${outside ? "rounded-md bg-critical-soft px-2 py-0.5 text-critical-text" : late ? "text-warning" : "text-ink-2"}`}
+        className={`tnum col-span-2 flex items-center gap-1 text-[11px] ${outside ? "rounded-md bg-critical-soft px-2 py-0.5 text-critical-text" : late ? "text-warning" : "text-ink-2"}`}
       >
         {outside ? <XCircle className="size-3.5 shrink-0" aria-hidden /> : late ? <Clock className="size-3.5 shrink-0" aria-hidden /> : <CheckCircle2 className="size-3.5 shrink-0" aria-hidden />}
         {text}
@@ -364,21 +363,21 @@ export function StoryView({ well, bad }: { well: Chapter[]; bad: Chapter[] }) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, delay: 0.05 * i }}
-            className="grid gap-3 lg:grid-cols-[11rem_1fr_1fr]"
+            className="grid gap-1.5"
           >
-            <div className="flex items-center gap-3 lg:flex-col lg:items-start lg:pt-4">
-              <span className="text-xs font-bold tracking-[0.2em] text-[var(--wf-violet-ink)] uppercase">Chapter {cw.n}</span>
-              <span className="text-lg leading-tight font-semibold">{cw.title}</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[10px] font-bold tracking-[0.2em] text-[var(--wf-violet-ink)] uppercase">Chapter {cw.n}</span>
+              <span className="text-sm leading-tight font-semibold">{cw.title}</span>
             </div>
             {[
               { w: "well" as const, c: cw },
               { w: "bad" as const, c: cb },
             ].map(({ w, c }) => (
-              <div key={w} className={`wf-card ${FUTURE[w].card} p-4`}>
-                <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold" style={{ color: FUTURE[w].ink }}>
+              <div key={w} className={`wf-card ${FUTURE[w].card} p-2.5`}>
+                <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold" style={{ color: FUTURE[w].ink }}>
                   <FutureDot which={w} size={7} /> {FUTURE[w].name}
                 </div>
-                <p className="text-[15px] leading-relaxed text-ink-2">{c.text}</p>
+                <p className="text-xs leading-relaxed text-ink-2">{c.text}</p>
               </div>
             ))}
           </motion.div>
@@ -396,23 +395,23 @@ export function GuidanceView({ good, bad }: { good: Tip[]; bad: Tip[] }) {
     { key: "bad" as const, title: "Prepare for the Difficult Future", Icon: ShieldAlert, tips: bad },
   ];
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-3">
       {cols.map((c) => (
-        <Panel key={c.key} className={FUTURE[c.key].card}>
-          <div className="mb-4 flex items-center gap-2.5">
-            <span className="grid size-9 place-items-center rounded-xl" style={{ background: FUTURE[c.key].soft, color: FUTURE[c.key].ink }}>
-              <c.Icon className="size-5" aria-hidden />
+        <div key={c.key} className={`wf-card ${FUTURE[c.key].card} p-3`}>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="grid size-7 place-items-center rounded-lg" style={{ background: FUTURE[c.key].soft, color: FUTURE[c.key].ink }}>
+              <c.Icon className="size-4" aria-hidden />
             </span>
-            <h3 className="text-lg font-semibold">{c.title}</h3>
+            <h3 className="text-sm font-semibold">{c.title}</h3>
           </div>
           {c.tips.length ? (
-            <ol className="space-y-3">
+            <ol className="space-y-2">
               {c.tips.map((t, i) => (
                 <li key={i} className="flex gap-3">
                   <span className="tnum grid size-6 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-semibold text-ink-2">{i + 1}</span>
                   <div className="min-w-0">
-                    <div className="font-semibold">{t.title}</div>
-                    <p className="text-sm leading-relaxed text-ink-2">{t.detail}</p>
+                    <div className="text-sm font-semibold">{t.title}</div>
+                    <p className="text-xs leading-relaxed text-ink-2">{t.detail}</p>
                     {t.impact && (
                       <span className="tnum mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: FUTURE[c.key].soft, color: FUTURE[c.key].ink }}>
                         {t.impact}
@@ -423,9 +422,9 @@ export function GuidanceView({ good, bad }: { good: Tip[]; bad: Tip[] }) {
               ))}
             </ol>
           ) : (
-            <p className="text-sm text-ink-2">Nothing pressing: this future already meets your goals on time.</p>
+            <p className="text-xs text-ink-2">Nothing pressing: this future already meets your goals on time.</p>
           )}
-        </Panel>
+        </div>
       ))}
     </div>
   );
@@ -455,11 +454,11 @@ export function Transparency({
   const real: [string, string, string][] = [
     ["Typical money in", `${cad(m.I)}/mo`, "median monthly money in"],
     ["Typical money out", `${cad(m.S)}/mo`, "median monthly money out"],
-    ["Starting savings", cad(m.B), "average daily balance, last 6 months"],
+    ["Starting savings", cad(m.B), "mean avg_daily_balance, last 6 months (to Dec 2025)"],
     ["Household bills", `${cad(m.H)}/mo`, "median"],
     ["Flexible spending", `${cad(m.disc)}/mo`, "card, cash, other transfers out"],
   ];
-  if (m.P > 0) real.push(["Loan payment", `${cad(m.P)}/mo`, loanEndsAt !== null && loanEndsAt > 0 ? `last payment ${monthName(now, loanEndsAt)}` : "loans.csv"]);
+  if (m.P > 0) real.push(["Loan payment", `${cad(m.P)}/mo`, loanEndsAt !== null && loanEndsAt > 0 ? `loans.csv · last payment ${monthName(now, loanEndsAt)}` : "loans.csv"]);
   if (m.pension > 0) real.push(["Pension income", `${cad(m.pension)}/mo`, "kept in every scenario"]);
   const rows: { label: string; k: keyof Assumptions; fmt: (x: number) => string }[] = [
     ...(showUpside
@@ -473,8 +472,8 @@ export function Transparency({
     { label: "Everyday prices rise", k: "inflationPct", fmt: (x) => `${x}%/yr` },
   ];
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <Panel>
+    <div className="grid gap-3 text-sm">
+      <Panel className="!p-3">
         <div className="mb-3 flex items-center gap-2 font-semibold">
           <Database className="size-4 text-accent-ink" aria-hidden /> From account #{m.id} <Source kind="data" />
         </div>
@@ -490,7 +489,7 @@ export function Transparency({
           ))}
         </dl>
       </Panel>
-      <Panel>
+      <Panel className="!p-3">
         <div className="mb-3 flex items-center gap-2 font-semibold">
           <Compass className="size-4 text-[var(--wf-violet-ink)]" aria-hidden /> Your decision <Source kind="input" />
         </div>
@@ -515,7 +514,7 @@ export function Transparency({
           ))}
         </dl>
       </Panel>
-      <Panel>
+      <Panel className="!p-3">
         <div className="mb-3 flex items-center gap-2 font-semibold">
           <Sparkles className="size-4 text-ink-2" aria-hidden /> How the futures differ <Source kind="assumed" />
         </div>

@@ -16,7 +16,32 @@ const ymLabel = (s: string) => {
 
 /* ------------------------------------------------------------------ scenario picker */
 
-export function ScenarioPicker({ value, onChange, compact }: { value: ScenarioKind; onChange: (k: ScenarioKind) => void; compact?: boolean }) {
+export function ScenarioPicker({ value, onChange, compact, mini }: { value: ScenarioKind; onChange: (k: ScenarioKind) => void; compact?: boolean; mini?: boolean }) {
+  if (mini)
+    return (
+      <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="What If scenario">
+        {SCENARIOS.map((s) => {
+          const Icon = SCENARIO_ICON[s.kind];
+          const on = s.kind === value;
+          return (
+            <button
+              key={s.kind}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              title={s.title}
+              onClick={() => onChange(s.kind)}
+              className={`flex flex-col items-center gap-1 rounded-xl border px-1 py-1.5 text-center text-[11px] leading-tight font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
+                on ? "border-accent/70 bg-accent-soft text-ink" : "border-line bg-[var(--wf-card-2)] text-ink-2 hover:border-[var(--wf-violet)]/50 hover:text-ink"
+              }`}
+            >
+              <Icon className={`size-4 ${on ? "text-accent-ink" : "text-[var(--wf-violet-ink)]"}`} aria-hidden />
+              {s.short}
+            </button>
+          );
+        })}
+      </div>
+    );
   return (
     <div className={`grid gap-2.5 ${compact ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`} role="radiogroup" aria-label="What If scenario">
       {SCENARIOS.map((s) => {
@@ -148,7 +173,7 @@ export function ScenarioForm({
 }) {
   const set = (k: string, x: number | string) => onChange({ ...values, [k]: x });
   return (
-    <div className="space-y-5">
+    <div className="space-y-3.5">
       {def.fields.map((f) =>
         f.kind === "date" ? (
           <MonthField key={f.key} id={`wf-${def.kind}-${f.key}`} label={f.label} value={String(values[f.key])} onChange={(x) => set(f.key, x)} now={now} />
@@ -238,7 +263,7 @@ export function GoalsEditor({
                 exit={{ opacity: 0, x: -20, height: 0, marginTop: 0 }}
                 className="overflow-hidden rounded-2xl border border-line bg-[var(--wf-card-2)]"
               >
-                <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+                <div className="flex flex-wrap items-center gap-2 px-3 py-2">
                   <span className="grid size-8 place-items-center rounded-lg bg-surface-2 text-[var(--wf-violet-ink)]" title={g.spend ? "Purchase: spent when reached" : "Savings: kept once reached"}>
                     {g.spend ? <ShoppingBag className="size-4" aria-hidden /> : <Vault className="size-4" aria-hidden />}
                   </span>
@@ -268,7 +293,7 @@ export function GoalsEditor({
                 <AnimatePresence initial={false}>
                   {open && (
                     <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
-                      <div className="grid gap-3 border-t border-line px-4 py-4 sm:grid-cols-2">
+                      <div className="grid grid-cols-2 gap-2.5 border-t border-line px-3 py-3">
                         <label className="block text-sm text-ink-2">
                           Goal name
                           <input value={g.name} maxLength={40} onChange={(e) => update(g.id, { name: e.target.value })} className="wf-input mt-1 w-full px-3 py-1.5 text-ink" />
@@ -312,7 +337,7 @@ export function GoalsEditor({
                             ))}
                           </div>
                         </div>
-                        <div className="text-sm text-ink-2 sm:col-span-2">
+                        <div className="col-span-2 text-sm text-ink-2">
                           When it’s reached
                           <div className="mt-1 flex gap-1.5">
                             {[
@@ -330,7 +355,7 @@ export function GoalsEditor({
                             ))}
                           </div>
                         </div>
-                        {hint && <p className="text-xs text-muted sm:col-span-2">{hint}</p>}
+                        {hint && <p className="col-span-2 text-xs text-muted">{hint}</p>}
                       </div>
                     </motion.div>
                   )}
@@ -350,7 +375,7 @@ export function GoalsEditor({
         <button
           onClick={() => setMenu(!menu)}
           aria-expanded={menu}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--wf-violet)]/50 bg-[var(--wf-violet-soft)] px-4 py-3 font-semibold text-[var(--wf-violet-ink)] transition-colors hover:bg-[var(--wf-violet)]/25"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--wf-violet)]/50 bg-[var(--wf-violet-soft)] px-4 py-2 text-sm font-semibold text-[var(--wf-violet-ink)] transition-colors hover:bg-[var(--wf-violet)]/25"
         >
           <Plus className="size-5" aria-hidden /> Add Goal
         </button>
@@ -360,7 +385,7 @@ export function GoalsEditor({
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4"
+              className="mt-2 grid grid-cols-2 gap-1.5"
             >
               {GOAL_TEMPLATES.map((t, i) => (
                 <button
@@ -369,7 +394,9 @@ export function GoalsEditor({
                   className="rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-left text-sm hover:border-accent"
                 >
                   <div className="font-medium">{t.label}</div>
-                  <div className="tnum text-xs text-muted">{cad(t.target(m, loanEndsAt))}</div>
+                  <div className="tnum text-xs text-muted">
+                    {cad(t.target(m, loanEndsAt))} · {t.basis(m, loanEndsAt) === "data" ? "from your data" : "example"}
+                  </div>
                 </button>
               ))}
             </motion.div>
@@ -409,11 +436,11 @@ export function AssumptionsEditor({
   showUpside: boolean;
 }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-3">
       {(["well", "bad"] as const).map((w) => {
         const a = w === "well" ? well : bad;
         return (
-          <div key={w} className={`wf-card ${FUTURE[w].card} space-y-4 p-4`}>
+          <div key={w} className={`wf-card ${FUTURE[w].card} space-y-3 p-3`}>
             <div className="flex items-center gap-2 font-semibold" style={{ color: FUTURE[w].ink }}>
               <FutureDot which={w} /> {FUTURE[w].tag} · {FUTURE[w].name}
               <span className="ml-auto">

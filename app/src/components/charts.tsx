@@ -229,7 +229,7 @@ const shortMonth = (label: string) => {
 };
 
 /** Duration-aware savings projection: shock months shaded, shock end marked, zero line, run-out point. */
-export function ShockProjectionChart({ p, animate = true }: { p: Projection; animate?: boolean }) {
+export function ShockProjectionChart({ p, animate = true, fill }: { p: Projection; animate?: boolean; fill?: boolean }) {
   const data = p.points;
   const H = p.horizon;
   const end = Math.min(p.duration, H);
@@ -239,15 +239,15 @@ export function ShockProjectionChart({ p, animate = true }: { p: Projection; ani
   const bLo = Math.min(0, ...data.map((d) => d.balance));
   const zeroAt = bHi === bLo ? 1 : bHi / (bHi - bLo);
   return (
-    <div>
-      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+    <div className={fill ? "flex h-full min-h-0 flex-col" : ""}>
+      <div className="mb-1 flex flex-wrap items-center gap-x-4 gap-y-1">
         <LegendKey color="var(--series-2)" label="With this shock" />
         <LegendKey color="var(--series-1)" label="No shock" dashed />
         <span className="inline-flex items-center gap-1.5 text-xs text-ink-2">
           <span className="h-2.5 w-4 rounded-sm bg-accent/15" aria-hidden /> Shock period
         </span>
       </div>
-      <div className="h-64 sm:h-72">
+      <div className={fill ? "min-h-[180px] flex-1" : "h-64 sm:h-72"}>
         <ResponsiveContainer>
           <ComposedChart data={data} margin={{ top: 24, right: 14, bottom: 0, left: 0 }}>
             <defs>

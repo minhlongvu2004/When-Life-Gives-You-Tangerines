@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
-import { nowYM } from "@/lib/whatif/scenarios";
+import { dataAsOf } from "@/lib/whatif/scenarios";
 import { StepCustomer, StepPlan, StepShock, type Peers } from "./guided";
 
 const FIFTHS = ["lowest", "low", "middle", "high", "highest"];
@@ -19,8 +19,8 @@ export function Engine() {
   const [step, setStep] = useState(0);
   const [mode, setMode] = useState<Mode>("judge");
   const [shock, setShock] = useState<Shock>(NO_SHOCK);
-  const [start, setStart] = useState<string | null>(null); // YYYY-MM the shock starts, null = this month
-  const now = useMemo(() => nowYM(), []);
+  const [start, setStart] = useState<string | null>(null); // YYYY-MM the shock starts, null = the month after the data ends
+  const now = useMemo(() => dataAsOf(), []);
   const [detail, setDetail] = useState<AccountDetail | null | undefined>(undefined);
 
   const all = useMemo(() => (metrics ? [...metrics.values()] : []), [metrics]);
@@ -52,7 +52,9 @@ export function Engine() {
   useEffect(() => {
     if (id === null) return;
     let alive = true;
-    loadDetail(id).then((d) => alive && setDetail(d));
+    loadDetail(id)
+      .then((d) => alive && setDetail(d))
+      .catch(() => alive && setDetail(null));
     return () => {
       alive = false;
     };
@@ -85,17 +87,18 @@ export function Engine() {
       <Landing ready={!!metrics} featured={findings?.featured ?? []} onOpen={(n) => metrics?.has(n) && open(n)} has={(n) => !!metrics?.has(n)} all={all} />
     );
 
+  // owner's gender and age (clients.csv via dispositions.csv), branch region (accounts.csv → districts.csv). No names exist in the data.
   const who = detail?.owner
-    ? `${detail.owner.gender === "F" ? "Woman" : detail.owner.gender === "M" ? "Man" : "Customer"}${detail.owner.age ? `, ${detail.owner.age}` : ""} · ${detail.region}`
-    : "";
+    ? `owner ${detail.owner.gender === "F" ? "female" : detail.owner.gender === "M" ? "male" : "gender n/a"}${detail.owner.age ? `, age ${detail.owner.age} in 2025` : ""} · ${detail.region}`
+    : (m.region ?? "");
 
   return (
-    <div>
+    <div className="flex flex-col lg:h-full lg:min-h-0">
       {/* customer pill + stepper */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-1.5 pl-4 shadow-sm">
+      <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pr-1 pl-4 shadow-sm">
           <span className="text-sm">
-            <span className="tnum font-semibold">#{m.id}</span>
+            <span className="tnum font-semibold">Account #{m.id}</span>
             {who && <span className="hidden text-ink-2 sm:inline"> · {who}</span>}
           </span>
           <button
@@ -111,7 +114,8 @@ export function Engine() {
             <button
               key={s}
               onClick={() => setStep(i)}
-              className={`relative flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${step === i ? "text-page" : "text-ink-2 hover:text-ink"}`}
+              aria-current={step === i ? "step" : undefined}
+              className={`relative flex items-center gap-2 rounded-full px-4 py-1 text-sm font-medium transition-colors ${step === i ? "text-page" : "text-ink-2 hover:text-ink"}`}
             >
               {step === i && (
                 <motion.span
@@ -134,9 +138,9 @@ export function Engine() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col justify-center pb-2"
+          className={`flex flex-col justify-center ${step === 1 ? "lg:min-h-0 lg:flex-1" : "pb-2"}`}
         >
-          {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} />}
+          {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} historyMissing={detail === null} />}
           {step === 1 && <StepShock
               m={m}
               mode={mode}
@@ -174,8 +178,12 @@ function Landing({
   const ref = useRef<HTMLInputElement>(null);
   const go = (raw: string) => {
     const n = Number(raw.trim());
+    if (!/^\d{1,9}$/.test(raw.trim())) {
+      setErr("Account IDs are numbers only, like 52783.");
+      return;
+    }
     if (!has(n)) {
-      setErr("No customer with that ID. Try one of the examples below.");
+      setErr(`No account ${raw.trim()} in accounts.csv. Try one of the examples below.`);
       return;
     }
     onOpen(n);
@@ -184,7 +192,7 @@ function Landing({
     <div className="flex flex-col items-center justify-center py-6 text-center">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-2xl">
         <div className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs font-medium text-ink-2">
-          <span className="size-1.5 rounded-full bg-accent" /> 4,500 real bank customers · 1 million transactions
+          <span className="size-1.5 rounded-full bg-accent" /> 4,500 anonymized bank accounts · 1,056,320 transactions · 2020–2025
         </div>
         <h1 className="mt-6 text-5xl font-semibold tracking-tighter sm:text-7xl">
           Will they <span className="text-accent">make it?</span>

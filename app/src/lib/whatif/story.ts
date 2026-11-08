@@ -73,9 +73,9 @@ export function story(which: Which, ctx: StoryCtx): Chapter[] {
   const P = f.points;
 
   // Chapter 1 — the decision
-  const ch1 = `You decide to ${ctx.decision}. You begin with ${cad(m.B)} in savings, and your account history shows typical money in of ${mo(
+  const ch1 = `Suppose you ${ctx.decision}. The starting point is the account's latest data: ${cad(m.B)} in savings (Dec 2025), with typical money in of ${mo(
     m.I,
-  )} and money out of ${mo(m.S)}. In this future, ${assumptionPhrase(def, f)}.`;
+  )} and money out of ${mo(m.S)} over 2020–2025. In this hypothetical future, ${assumptionPhrase(def, f)}.`;
 
   // Chapter 2 — the first few months
   const w = Math.min(h, Math.max(3, start + 2));

@@ -311,6 +311,45 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
   .glass-field[aria-invalid="true"] {
     border-color: var(--critical);
   }
+
+  /* ---------------------------------------------------------------- single-screen workspaces
+     A workspace page is a grid of panels that together take the viewport height on desktop.
+     A panel that can hold more than fits (long forms, lists) scrolls inside itself, so the page
+     never does and nothing is cut off. */
+  .ws-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    background: var(--glass-strong);
+    border: 1px solid var(--border);
+    border-radius: 1.1rem;
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 14px 40px -30px var(--shadow-color);
+  }
+  .ws-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--axis) transparent;
+  }
+  .ws-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .ws-scroll::-webkit-scrollbar-thumb {
+    background: var(--axis);
+    border-radius: 999px;
+  }
+  .ws-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
 }
 
 /* No backdrop-filter (older browsers): solid colours so text stays readable. */

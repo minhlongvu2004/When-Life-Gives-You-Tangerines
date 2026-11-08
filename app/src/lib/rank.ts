@@ -211,19 +211,10 @@ export function nextLeague(data: RankData, row: RankRow): NextLeague {
   return { current: cur, next: nx, needScore: t.minScore, gap: Math.max(0, round1(t.minScore - row.score)), positions: Math.max(1, row.rank - t.maxRank) };
 }
 
-/* ------------------------------------------------------------------ anonymous aliases */
+/* ------------------------------------------------------------------ labels */
 
-const ADJ = ["Amber", "Brisk", "Calm", "Clever", "Coral", "Daring", "Golden", "Jade", "Keen", "Lucky", "Mellow", "Misty", "Nimble", "Quiet", "Rapid", "Rustic", "Silver", "Steady", "Sunny", "Swift", "Tangy", "Velvet", "Witty", "Zesty"];
-const NOUN = ["Otter", "Falcon", "Maple", "Comet", "Heron", "Lynx", "Orchid", "Pine", "Robin", "Sparrow", "Tiger", "Willow", "Badger", "Cedar", "Finch", "Fox", "Koala", "Lark", "Moose", "Puffin", "Raven", "Seal", "Tangerine", "Wren"];
-/** Deterministic, non-reversible-looking label so the leaderboard never shows account IDs. */
-export function alias(id: number): string {
-  let h = 2166136261;
-  for (const ch of `tangerine:${id}`) {
-    h ^= ch.charCodeAt(0);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return `${ADJ[h % ADJ.length]} ${NOUN[Math.floor(h / ADJ.length) % NOUN.length]} ${String(Math.floor(h / 576) % 1000).padStart(3, "0")}`;
-}
+/** The datasets have no customer names, so an account is only ever shown by its real account_id. */
+export const accountLabel = (id: number) => `Account #${id}`;
 
 /* ------------------------------------------------------------------ hypothetical changes */
 

@@ -89,6 +89,59 @@ export function Segmented<T extends string>({
   );
 }
 
+/** Accessible tab strip (role=tablist, arrow keys move between tabs). Pair with role="tabpanel" content. */
+export function TabBar<T extends string>({
+  value,
+  tabs,
+  onChange,
+  label,
+  idBase,
+  className = "",
+}: {
+  value: T;
+  tabs: { value: T; label: ReactNode }[];
+  onChange: (v: T) => void;
+  label: string;
+  idBase: string;
+  className?: string;
+}) {
+  const lid = useId();
+  return (
+    <div
+      role="tablist"
+      aria-label={label}
+      className={`flex shrink-0 gap-0.5 overflow-x-auto rounded-full bg-surface-2 p-0.5 [scrollbar-width:none] ${className}`}
+      onKeyDown={(e) => {
+        if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+        const i = tabs.findIndex((t) => t.value === value);
+        const n = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+        onChange(n.value);
+        (e.currentTarget.querySelector(`#${CSS.escape(`${idBase}-tab-${n.value}`)}`) as HTMLElement | null)?.focus();
+      }}
+    >
+      {tabs.map((t) => {
+        const on = t.value === value;
+        return (
+          <button
+            key={t.value}
+            id={`${idBase}-tab-${t.value}`}
+            role="tab"
+            type="button"
+            aria-selected={on}
+            aria-controls={`${idBase}-panel`}
+            tabIndex={on ? 0 : -1}
+            onClick={() => onChange(t.value)}
+            className={`relative flex-1 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${on ? "text-page" : "text-ink-2 hover:text-ink"}`}
+          >
+            {on && <motion.span layoutId={`tab-${lid}`} className="absolute inset-0 rounded-full bg-ink" transition={{ type: "spring", duration: 0.35, bounce: 0.15 }} />}
+            <span className="relative">{t.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Slider({
   label,
   value,

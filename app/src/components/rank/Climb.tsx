@@ -19,7 +19,7 @@ import {
   type RankRow,
 } from "@/lib/rank";
 import { AnimatedNumber, Segmented } from "../ui";
-import { Panel, SectionHead } from "../whatif/bits";
+import { ProvTip } from "../ProvTip";
 import { NumberField } from "../whatif/inputs";
 import { LEAGUE_STYLE, MiniBadge, ResilienceBadge } from "./ResilienceBadge";
 import { biggestOpportunity } from "./sections";
@@ -67,18 +67,17 @@ export function RankImprovementSimulator({
   const dirty = changes.save || changes.cut || changes.income || changes.extraLoan;
 
   return (
-    <Panel>
-      <SectionHead
-        title="Climb the Ranks"
-        sub="Explore how changes to your financial habits could improve your resilience."
-        right={
-          <button onClick={() => setChanges(NO_CHANGES)} disabled={!dirty} className="btn btn-outline gap-1 rounded-full px-3 py-1.5 text-xs">
-            <RotateCcw className="size-3.5" aria-hidden /> Reset
-          </button>
-        }
-      />
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-        <div className="space-y-5">
+    <div>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <p className="flex items-center gap-1 text-xs text-ink-2">
+          Hypothetical changes, re-scored with the same rules. <ProvTip k="rankProjection" />
+        </p>
+        <button onClick={() => setChanges(NO_CHANGES)} disabled={!dirty} className="btn btn-outline shrink-0 gap-1 rounded-full px-2.5 py-1 text-[11px]">
+          <RotateCcw className="size-3" aria-hidden /> Reset
+        </button>
+      </div>
+      <div className="flex flex-col gap-3">
+        <div className="space-y-3">
           <Lever icon={<PiggyBank className="size-4" />} note="Grows your savings buffer only">
             <NumberField f={{ key: "rk-save", label: "Additional monthly savings", kind: "monthly", min: 0, max: lim.save, step: 25 }} value={changes.save} onChange={(v) => set("save", v)} />
           </Lever>
@@ -113,27 +112,27 @@ export function RankImprovementSimulator({
           )}
         </div>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl bg-[var(--wf-card-2)] p-4">
+        <div className="order-first space-y-2">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl bg-[var(--wf-card-2)] p-2.5">
             <RankBox label="Current Rank" rank={row.rank} score={row.score} league={curLeague} />
             <ArrowRight className="size-5 text-muted" aria-hidden />
             <RankBox label="Projected Rank" rank={p.rank} score={p.score} league={p.league} highlight={moved > 0} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-[var(--wf-card-2)] p-4">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-[var(--wf-card-2)] p-2.5">
               <div className="text-xs text-ink-2">Potential improvement</div>
-              <div className={`tnum mt-1 flex items-center gap-1.5 text-2xl font-semibold ${moved > 0 ? "text-good-text" : moved < 0 ? "text-critical-text" : ""}`}>
+              <div className={`tnum mt-0.5 flex items-center gap-1.5 text-xl font-semibold ${moved > 0 ? "text-good-text" : moved < 0 ? "text-critical-text" : ""}`}>
                 {moved > 0 ? <ArrowUp className="size-5" aria-hidden /> : moved < 0 ? <ArrowDown className="size-5" aria-hidden /> : <Minus className="size-5" aria-hidden />}
                 <AnimatedNumber value={Math.abs(moved)} format={(v) => Math.round(v).toLocaleString("en-CA")} />
               </div>
               <div className="text-xs text-muted">{moved === 0 ? "positions" : moved > 0 ? "positions up" : "positions down"}</div>
             </div>
-            <div className="relative overflow-hidden rounded-2xl p-4" style={{ background: leagueUp ? `${LEAGUE_STYLE[p.league].mid}22` : "var(--wf-card-2)" }}>
+            <div className="relative overflow-hidden rounded-xl p-2.5" style={{ background: leagueUp ? `${LEAGUE_STYLE[p.league].mid}22` : "var(--wf-card-2)" }}>
               <div className="text-xs text-ink-2">Projected league</div>
               <div className="mt-1 flex items-center gap-2">
                 <AnimatePresence mode="wait">
                   <motion.div key={p.league} initial={{ scale: 0.5, rotate: -20, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 260, damping: 15 }}>
-                    <ResilienceBadge league={p.league} size={44} label={false} />
+                    <ResilienceBadge league={p.league} size={34} label={false} />
                   </motion.div>
                 </AnimatePresence>
                 <div>
@@ -145,8 +144,8 @@ export function RankImprovementSimulator({
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-[var(--wf-card-2)] p-4">
-            <div className="mb-2 text-xs text-ink-2">Category scores: now → projected</div>
+          <div className="rounded-xl bg-[var(--wf-card-2)] p-2.5">
+            <div className="mb-1.5 text-xs text-ink-2">Category scores: current → projected</div>
             <div className="space-y-2">
               {CATEGORIES.map((c) => {
                 const d = p.scored[c] - base[c];
@@ -167,12 +166,12 @@ export function RankImprovementSimulator({
             {p.notes.length > 0 && <p className="mt-2 text-xs text-muted">{p.notes.join(". ")}.</p>}
           </div>
           <p className="text-xs leading-relaxed text-muted">
-            Hypothetical projection, not a guaranteed future ranking. Your projected score is compared with today’s fixed ranking of {data.meta.n.toLocaleString("en-CA")} accounts. Extra savings,
-            spending cuts and income changes are assumed to stay in this account for the whole period.
+            Hypothetical projection, not a guaranteed future ranking. The projected score is compared with the fixed Dec 2025 ranking of {data.meta.n.toLocaleString("en-CA")} accounts. Extra
+            savings, spending cuts and income changes are assumed to stay in this account for the whole period.
           </p>
         </div>
       </div>
-    </Panel>
+    </div>
   );
 }
 
@@ -192,7 +191,7 @@ function RankBox({ label, rank, score, league, highlight }: { label: string; ran
   return (
     <div className="min-w-0 text-center">
       <div className="text-xs text-ink-2">{label}</div>
-      <div className={`tnum text-3xl font-semibold tracking-tight ${highlight ? "rk-glow-text text-accent-ink" : ""}`}>
+      <div className={`tnum text-2xl font-semibold tracking-tight ${highlight ? "rk-glow-text text-accent-ink" : ""}`}>
         #<AnimatedNumber value={rank} format={(v) => Math.round(v).toLocaleString("en-CA")} />
       </div>
       <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5">
@@ -288,10 +287,9 @@ export function NextLeagueRoadmap({ data, row, now, onTry }: { data: RankData; r
 
   if (!nl.next)
     return (
-      <Panel>
-        <SectionHead title="Your Path to the Next League" />
-        <div className="flex flex-wrap items-center gap-5">
-          <ResilienceBadge league="diamond" size={80} label={false} />
+      <div>
+        <div className="flex flex-wrap items-center gap-4">
+          <ResilienceBadge league="diamond" size={64} label={false} />
           <div className="min-w-0 flex-1 text-ink-2">
             <p className="text-lg font-semibold text-ink">You’re in the top league.</p>
             <p className="mt-1">
@@ -300,41 +298,38 @@ export function NextLeagueRoadmap({ data, row, now, onTry }: { data: RankData; r
             </p>
           </div>
         </div>
-      </Panel>
+      </div>
     );
 
   const N = LEAGUE_STYLE[nl.next];
   return (
-    <Panel>
-      <SectionHead title="Your Path to the Next League" sub={`Based on your weakest categories, tested against the scoring model over ${T} months`} />
-      <div className="grid gap-6 lg:grid-cols-[17rem_1fr]">
-        <div className="rounded-2xl bg-[var(--wf-card-2)] p-4">
+    <div>
+      <p className="mb-2 text-xs text-ink-2">Steps for the weakest categories, each tested against the scoring model over {T} months. Hypothetical.</p>
+      <div className="flex flex-col gap-3">
+        <div className="rounded-xl bg-[var(--wf-card-2)] p-3">
           <div className="flex items-center justify-around">
-            <ResilienceBadge league={cur} size={64} />
+            <ResilienceBadge league={cur} size={48} />
             <ArrowRight className="size-5 text-muted" aria-hidden />
-            <ResilienceBadge league={nl.next} size={64} />
+            <ResilienceBadge league={nl.next} size={48} />
           </div>
-          <dl className="mt-4 space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-ink-2">Required score</dt>
+          <dl className="mt-2 grid grid-cols-3 gap-1 text-center text-xs">
+            <div>
+              <dt className="text-ink-2">Required</dt>
               <dd className="tnum font-semibold">{nl.needScore!.toFixed(1)}</dd>
             </div>
-            <div className="flex justify-between">
-              <dt className="text-ink-2">Your score</dt>
+            <div>
+              <dt className="text-ink-2">Current</dt>
               <dd className="tnum font-semibold">{row.score.toFixed(1)}</dd>
             </div>
-            <div className="flex justify-between">
+            <div>
               <dt className="text-ink-2">Gap</dt>
               <dd className="tnum font-semibold" style={{ color: N.ink }}>
                 +{nl.gap!.toFixed(1)} pts
               </dd>
             </div>
           </dl>
-          <p className="mt-3 text-xs text-muted">
-            You’re in {LEAGUE_STYLE[cur].name} League. Building on your weakest areas could help you reach {N.name}.
-          </p>
         </div>
-        <ol className="space-y-3">
+        <ol className="space-y-2">
           {steps.map((s, i) => (
             <motion.li
               key={s.title}
@@ -342,15 +337,15 @@ export function NextLeagueRoadmap({ data, row, now, onTry }: { data: RankData; r
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
-              className={`rounded-2xl p-4 ring-1 ${s.reaches ? "bg-good-soft ring-good/30" : "bg-[var(--wf-card-2)] ring-line"}`}
+              className={`rounded-xl p-2.5 ring-1 ${s.reaches ? "bg-good-soft ring-good/30" : "bg-[var(--wf-card-2)] ring-line"}`}
             >
               <div className="flex flex-wrap items-start gap-3">
                 <span className={`grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold ${s.reaches ? "bg-good text-page" : "bg-surface-2 text-ink-2"}`}>
                   {s.reaches ? <Flag className="size-3.5" aria-hidden /> : i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold">{s.title}</div>
-                  <p className="mt-0.5 text-sm text-ink-2">{s.detail}</p>
+                  <div className="text-sm font-semibold">{s.title}</div>
+                  <p className="mt-0.5 text-xs text-ink-2">{s.detail}</p>
                 </div>
                 {s.changes && (
                   <button onClick={() => onTry(s.changes!)} className="btn btn-secondary shrink-0 gap-1 rounded-full px-3 py-1.5 text-xs font-semibold">
@@ -361,9 +356,9 @@ export function NextLeagueRoadmap({ data, row, now, onTry }: { data: RankData; r
             </motion.li>
           ))}
           {!steps.length && <li className="text-sm text-ink-2">No single change in a realistic range closes this gap within 12 months. Try longer horizons in Climb the Ranks.</li>}
-          <li className="text-xs text-muted">Projections use today’s ranking and the published scoring rules. They show what the model would say, not a promise of promotion.</li>
+          <li className="text-xs text-muted">Projections use the fixed Dec 2025 ranking and the published scoring rules. They show what the model would say, not a promise of promotion.</li>
         </ol>
       </div>
-    </Panel>
+    </div>
   );
 }

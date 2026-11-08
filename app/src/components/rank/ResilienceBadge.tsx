@@ -43,7 +43,7 @@ export const LEAGUE_STYLE: Record<LeagueKey, { name: string; light: string; mid:
     ink: "var(--lg-silver-ink)",
     Icon: Medal,
     blurb: "Top 50–80%",
-    message: "Developing resilience. The next league is within reach.",
+    message: "Developing resilience. You're between the top 50% and top 80% of ranked accounts.",
   },
   bronze: {
     name: "Bronze",
@@ -53,7 +53,7 @@ export const LEAGUE_STYLE: Record<LeagueKey, { name: string; light: string; mid:
     ink: "var(--lg-bronze-ink)",
     Icon: Shield,
     blurb: "Last 20%",
-    message: "A starting point with plenty of room to grow. Every step up counts.",
+    message: "In the lowest-scoring 20% of ranked accounts, with the most room to grow.",
   },
 };
 

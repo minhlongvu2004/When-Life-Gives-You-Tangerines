@@ -87,14 +87,17 @@ let findingsP: Promise<Findings> | null = null;
 const detailCache = new Map<number, Promise<AccountDetail | null>>();
 
 /** The API (Tiger Data) first. If it is down or not configured, the identical JSON committed in public/data. */
+let apiDown = false; // once the API fails (e.g. no database configured), use the static copies for the session
 async function fetchJson<T>(api: string, fallback: string): Promise<T | null> {
-  try {
-    const r = await fetch(api);
-    if (r.ok) return (await r.json()) as T;
-    if (r.status === 404) return null;
-  } catch {
-    /* network error: use the static copy */
-  }
+  if (!apiDown)
+    try {
+      const r = await fetch(api);
+      if (r.ok) return (await r.json()) as T;
+      if (r.status === 404) return null;
+      if (r.status >= 500) apiDown = true;
+    } catch {
+      apiDown = true; // network error: use the static copy
+    }
   const r = await fetch(fallback);
   return r.ok ? ((await r.json()) as T) : null;
 }

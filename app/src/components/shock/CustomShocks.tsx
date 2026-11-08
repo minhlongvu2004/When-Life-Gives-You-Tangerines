@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { money, NO_SHOCK, scenario, type Metrics, type Mode, type Shock } from "@/lib/engine";
 import { isShock, loadCustomShocks, newShockId, sameShock, saveCustomShocks, shockLabel, type CustomShock } from "@/lib/shocks";
-import { parseYM, ymString, type YM } from "@/lib/whatif/scenarios";
+import { addMonths, parseYM, ymString, type YM } from "@/lib/whatif/scenarios";
 import { ShockControls } from "./ShockFields";
 
 const months = (r: number | null) => (r === null ? "120+" : r.toFixed(1));
@@ -18,6 +18,7 @@ export function CustomShocks({
   start,
   now,
   onRun,
+  bare,
 }: {
   m: Metrics;
   mode: Mode;
@@ -25,6 +26,7 @@ export function CustomShocks({
   start: string | null;
   now: YM;
   onRun: (s: Shock, start: string | null) => void;
+  bare?: boolean;
 }) {
   // only rendered in the browser (after account data loads), so storage is available here
   const [list, setList] = useState<CustomShock[]>(() => loadCustomShocks());
@@ -53,19 +55,22 @@ export function CustomShocks({
   };
 
   return (
-    <section className="glass-card relative overflow-hidden p-4 sm:p-5" aria-labelledby="custom-title">
-      <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 size-48 rounded-full bg-violet-soft blur-3xl" />
+    <section className={bare ? "relative" : "glass-card relative overflow-hidden p-4 sm:p-5"} aria-labelledby="custom-title">
+      {!bare && <div aria-hidden className="pointer-events-none absolute -top-16 -right-10 size-48 rounded-full bg-violet-soft blur-3xl" />}
       <div className="relative flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 id="custom-title" className="flex items-center gap-2 text-base font-semibold">
+          <h2 id="custom-title" className={`flex items-center gap-2 font-semibold ${bare ? "text-sm" : "text-base"}`}>
             <Sparkles className="size-4 text-violet-ink" aria-hidden /> Create Your Own Shock
           </h2>
-          <p className="text-sm text-ink-2">Life doesn&apos;t follow presets. Build a scenario that reflects your situation.</p>
+          <p className={bare ? "text-xs text-ink-2" : "text-sm text-ink-2"}>Combine any changes into a hypothetical scenario. Saved in this browser only.</p>
         </div>
-        <button type="button" onClick={() => setEditing("new")} className="btn btn-primary rounded-full px-4 py-2 text-sm">
+        <button type="button" onClick={() => setEditing("new")} className={`btn btn-primary rounded-full ${bare ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"}`}>
           <Plus className="size-4" aria-hidden /> Create Custom Shock
         </button>
       </div>
+      {bare && list.length === 0 && (
+        <p className="mt-3 rounded-xl border border-dashed border-line px-3 py-5 text-center text-xs text-muted">No custom shocks yet. The editor opens in a dialog, so this page stays in view.</p>
+      )}
 
       <AnimatePresence>
         {toast && (
@@ -86,7 +91,7 @@ export function CustomShocks({
       {saveFailed && <p className="relative mt-2 text-xs text-critical-text">This browser isn&apos;t letting us save, so your shocks will be gone after a reload.</p>}
 
       {list.length > 0 && (
-        <ul className="relative mt-3 grid gap-2.5 sm:grid-cols-2">
+        <ul className={`relative mt-3 grid gap-2.5 ${bare ? "" : "sm:grid-cols-2"}`}>
           <AnimatePresence initial={false}>
             {list.map((c) => {
               const on = sameShock(c.shock, shock) && c.start === start;
@@ -300,7 +305,7 @@ function CustomShockDialog({
                 <input
                   type="month"
                   value={start}
-                  min={ymString(now)}
+                  min={ymString(addMonths(now, 1))}
                   onChange={(e) => setStart(e.target.value)}
                   aria-invalid={!startOk}
                   className="glass-field px-3 py-1.5 text-sm"
@@ -311,7 +316,7 @@ function CustomShockDialog({
                   </button>
                 )}
               </div>
-              <span className="mt-1 block text-xs text-muted">Leave empty to start this month. Only changes the dates on the projection.</span>
+              <span className="mt-1 block text-xs text-muted">Leave empty to start right after the data ends (Jan 2026). Only changes the dates on the projection.</span>
             </label>
           </div>
 

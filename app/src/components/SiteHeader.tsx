@@ -28,7 +28,7 @@ export function SiteHeader() {
   const path = usePathname();
   return (
     <header className="z-40 shrink-0 bg-page/75 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2 sm:px-6">
+      <div className="mx-auto flex max-w-[1720px] items-center gap-4 px-4 py-2 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <TangerineMark />
           <span className="hidden truncate text-[15px] font-semibold tracking-tight sm:inline">When Life Gives You Tangerines</span>
@@ -40,7 +40,8 @@ export function SiteHeader() {
               <Link
                 key={n.href}
                 href={n.href}
-                className={`rounded-full px-2 py-1.5 font-medium whitespace-nowrap transition-colors sm:px-3.5 ${active ? "bg-ink text-page" : "text-ink-2 hover:text-ink"}`}
+                aria-current={active ? "page" : undefined}
+                className={`rounded-full px-2 py-1.5 font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:px-3.5 ${active ? "bg-ink text-page" : "text-ink-2 hover:text-ink"}`}
               >
                 {n.label}
               </Link>

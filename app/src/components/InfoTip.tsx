@@ -12,7 +12,7 @@ const EDGE = 12;
  * A small circular "?" button. Hover or focus shows the explanation; a tap or click pins it open
  * (for touch screens). Escape, a second tap, or a tap elsewhere closes it. Always kept on screen.
  */
-export function InfoTip({ label, children }: { label: string; children: ReactNode }) {
+export function InfoTip({ label, children, glyph = "?", ariaLabel }: { label: string; children: ReactNode; glyph?: string; ariaLabel?: string }) {
   const id = useId();
   const btn = useRef<HTMLButtonElement>(null);
   const tip = useRef<HTMLDivElement>(null);
@@ -64,7 +64,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
       <button
         ref={btn}
         type="button"
-        aria-label={`What does “${label}” mean?`}
+        aria-label={ariaLabel ?? `What does “${label}” mean?`}
         aria-expanded={open}
         aria-describedby={open ? id : undefined}
         onMouseEnter={() => setOpen(true)}
@@ -79,9 +79,9 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
             setPinned(true);
           }
         }}
-        className="grid size-[18px] shrink-0 place-items-center rounded-full border border-glass-border bg-glass text-[11px] leading-none font-bold text-muted transition-colors hover:border-accent hover:text-accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className={`grid size-[18px] shrink-0 place-items-center rounded-full border border-glass-border bg-glass text-[11px] leading-none font-bold text-muted transition-colors hover:border-accent hover:text-accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${glyph === "i" ? "font-serif italic" : ""}`}
       >
-        ?
+        {glyph}
       </button>
       {typeof document !== "undefined" &&
         createPortal(

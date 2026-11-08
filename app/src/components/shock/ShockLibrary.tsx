@@ -68,23 +68,23 @@ function unavailable(p: ShockPreset, m: Metrics): string | null {
   return null;
 }
 
-export function ShockLibrary({ m, shock, onPick }: { m: Metrics; shock: Shock; onPick: (s: Shock, p: ShockPreset) => void }) {
+export function ShockLibrary({ m, shock, onPick, bare }: { m: Metrics; shock: Shock; onPick: (s: Shock, p: ShockPreset) => void; bare?: boolean }) {
   const active = SHOCK_PRESETS.find((p) => sameShock(p.build(m), shock));
   const [tab, setTab] = useState<ShockCategory>(active?.category ?? "income");
   const list = SHOCK_PRESETS.filter((p) => p.category === tab);
 
   return (
-    <section className="glass-card p-4 sm:p-5" aria-labelledby="lib-title">
+    <section className={bare ? "" : "glass-card p-4 sm:p-5"} aria-labelledby="lib-title">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="lib-title" className="text-base font-semibold">
+          <h2 id="lib-title" className={bare ? "sr-only" : "text-base font-semibold"}>
             Pick a shock
           </h2>
-          <p className="text-sm text-ink-2">Each one fills in starting values. They&apos;re assumptions: change any of them below.</p>
+          <p className={bare ? "text-xs text-ink-2" : "text-sm text-ink-2"}>Each preset fills in hypothetical starting values. Change any of them under Adjust.</p>
         </div>
       </div>
 
-      <div role="tablist" aria-label="Shock categories" className="mt-3 -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+      <div role="tablist" aria-label="Shock categories" className={`${bare ? "mt-2" : "mt-3"} -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none]`}>
         {CATEGORIES.map((c) => {
           const on = tab === c.key;
           const n = SHOCK_PRESETS.filter((p) => p.category === c.key).length;
@@ -94,7 +94,7 @@ export function ShockLibrary({ m, shock, onPick }: { m: Metrics; shock: Shock; o
               role="tab"
               aria-selected={on}
               onClick={() => setTab(c.key)}
-              className={`relative shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${on ? "text-page" : "text-ink-2 hover:text-ink"}`}
+              className={`relative shrink-0 rounded-full font-medium whitespace-nowrap transition-colors ${bare ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm"} ${on ? "text-page" : "text-ink-2 hover:text-ink"}`}
             >
               {on && <motion.span layoutId="shock-tab" className="absolute inset-0 rounded-full bg-ink" transition={{ type: "spring", duration: 0.35, bounce: 0.15 }} />}
               <span className="relative">
@@ -105,7 +105,13 @@ export function ShockLibrary({ m, shock, onPick }: { m: Metrics; shock: Shock; o
         })}
       </div>
 
-      <motion.div key={tab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }} className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+      <motion.div
+        key={tab}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22 }}
+        className={`grid grid-cols-1 sm:grid-cols-2 ${bare ? "mt-2 gap-2" : "mt-3 gap-2.5"}`}
+      >
         {list.map((p) => {
           const s = p.build(m);
           const on = sameShock(s, shock);
@@ -119,14 +125,14 @@ export function ShockLibrary({ m, shock, onPick }: { m: Metrics; shock: Shock; o
               onClick={() => onPick(s, p)}
               aria-pressed={on}
               whileTap={off ? undefined : { scale: 0.98 }}
-              className={`group relative flex min-w-0 items-start gap-3 rounded-2xl border p-3 text-left transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-55 ${
+              className={`group relative flex min-w-0 items-start gap-2.5 rounded-xl border text-left transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-55 ${bare ? "p-2.5" : "p-3"} ${
                 on
                   ? "border-accent bg-accent-soft shadow-[0_10px_30px_-18px_var(--accent)]"
                   : "border-glass-border bg-glass hover:-translate-y-0.5 hover:border-accent/50 hover:shadow-[0_10px_26px_-20px_var(--shadow-color)]"
               }`}
             >
               <span
-                className={`grid size-9 shrink-0 place-items-center rounded-xl transition-colors ${on ? "bg-accent text-white" : "bg-surface-2 text-accent-ink group-hover:text-accent"}`}
+                className={`grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${on ? "bg-accent text-white" : "bg-surface-2 text-accent-ink group-hover:text-accent"}`}
               >
                 {on ? <Check className="size-4.5" aria-hidden /> : <Icon className="size-4.5" aria-hidden />}
               </span>
@@ -135,8 +141,10 @@ export function ShockLibrary({ m, shock, onPick }: { m: Metrics; shock: Shock; o
                   <span className="text-sm font-semibold text-ink">{p.title}</span>
                   {p.datathon && <span className="rounded-full bg-violet-soft px-1.5 py-px text-[10px] font-semibold tracking-wide text-violet-ink uppercase">Datathon</span>}
                 </span>
-                <span className="mt-0.5 block text-xs leading-snug text-ink-2">{off ?? p.assumption}</span>
-                {!off && <span className="mt-1 block truncate text-[11px] text-muted">{shockLabel(s)}</span>}
+                <span className={`mt-0.5 block text-xs leading-snug text-ink-2 ${bare ? "line-clamp-2" : ""}`} title={off ?? p.assumption}>
+                  {off ?? p.assumption}
+                </span>
+                {!off && <span className="mt-0.5 block truncate text-[11px] text-muted">{shockLabel(s)}</span>}
               </span>
             </motion.button>
           );

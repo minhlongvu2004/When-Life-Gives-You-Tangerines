@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { alias, decodeRank, leagueOfRank, leverToReach, nextLeague, NO_CHANGES, project, rankOf, round1, scoreFromInputs } from "./rank";
+import { accountLabel, decodeRank, leagueOfRank, leverToReach, loanMonthsLeft, nextLeague, NO_CHANGES, project, rankOf, round1, scoreFromInputs } from "./rank";
+import { DATA_AS_OF } from "./whatif/scenarios";
 
 const data = decodeRank(JSON.parse(readFileSync(join(__dirname, "..", "..", "public", "data", "rank.json"), "utf8")));
-const now = { y: 2026, m: 11 };
+const now = DATA_AS_OF;
 
 describe("precomputed ranking is internally consistent", () => {
   it("covers every account exactly once", () => {
@@ -35,11 +36,16 @@ describe("precomputed ranking is internally consistent", () => {
     expect(data.meta.thresholds.diamond.maxRank).toBeLessThanOrEqual(Math.ceil(0.05 * data.meta.n));
   });
 
-  it("aliases are stable and don't reveal the account id", () => {
-    expect(alias(20134)).toBe(alias(20134));
-    expect(alias(20134)).not.toContain("20134");
-    const names = new Set(data.rows.map((r) => alias(r.id)));
-    expect(names.size).toBeGreaterThan(data.rows.length * 0.97);
+  it("leaderboard labels are the real account ids, never invented names", () => {
+    expect(accountLabel(20134)).toBe("Account #20134");
+    const names = new Set(data.rows.map((r) => accountLabel(r.id)));
+    expect(names.size).toBe(data.rows.length);
+  });
+
+  it("every loan counted as running in the score still has payments left at the data's end (Dec 2025)", () => {
+    const running = data.rows.filter((r) => r.P > 0);
+    expect(running.length).toBeGreaterThan(100);
+    for (const r of running) expect(loanMonthsLeft(r, DATA_AS_OF)).toBeGreaterThan(0);
   });
 });
 

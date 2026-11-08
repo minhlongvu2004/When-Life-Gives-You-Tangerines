@@ -4,6 +4,7 @@ import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion } fr
 import { ArrowRight, Loader2, RotateCcw, Search, Shuffle, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CATEGORY_META, leagueOfRank, nextLeague, topPct, type CategoryKey, type RankData, type RankRow } from "@/lib/rank";
+import { ProvTip } from "../ProvTip";
 import { LEAGUE_STYLE, ResilienceBadge } from "./ResilienceBadge";
 
 /* ------------------------------------------------------------------ search */
@@ -25,7 +26,7 @@ export function AccountRankSearch({
 }) {
   const [v, setV] = useState("");
   return (
-    <div className={`wf-card mx-auto max-w-2xl text-center ${compact ? "p-4" : "p-6 sm:p-8"}`}>
+    <div className={compact ? "" : "wf-card mx-auto max-w-2xl p-6 text-center sm:p-8"}>
       {!compact && (
         <>
           <h2 className="text-2xl font-semibold tracking-tight">Find Your Financial Rank</h2>
@@ -37,27 +38,30 @@ export function AccountRankSearch({
           e.preventDefault();
           onSubmit(v);
         }}
-        className={`mx-auto flex max-w-md items-center gap-2 rounded-2xl border border-line bg-surface-2 p-2 pl-4 focus-within:border-accent ${compact ? "" : "mt-6"}`}
+        className={`mx-auto flex max-w-md items-center gap-2 rounded-xl border border-line bg-surface-2 focus-within:border-accent ${compact ? "p-1 pl-3" : "mt-6 p-2 pl-4"}`}
       >
-        <Search className="size-5 shrink-0 text-muted" aria-hidden />
+        <Search className="size-4 shrink-0 text-muted" aria-hidden />
         <input
           inputMode="numeric"
           value={v}
           onChange={(e) => setV(e.target.value.replace(/[^\d]/g, ""))}
-          placeholder={ready ? "Account ID, e.g. 20134" : "Loading rankings…"}
-          className="tnum min-w-0 flex-1 bg-transparent py-2 text-lg outline-none placeholder:text-muted"
+          placeholder={ready ? (compact ? "Another account ID" : "Account ID, e.g. 20134") : "Loading rankings…"}
+          className={`tnum min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted ${compact ? "py-1 text-sm" : "py-2 text-lg"}`}
           aria-label="Account ID"
           aria-invalid={!!error}
           aria-describedby={error ? "rank-err" : undefined}
         />
-        <button disabled={!ready || busy} className="wf-cta flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 font-semibold whitespace-nowrap text-white disabled:opacity-50 sm:px-5">
+        <button
+          disabled={!ready || busy}
+          className={`wf-cta flex shrink-0 items-center gap-1.5 font-semibold whitespace-nowrap text-white disabled:opacity-50 ${compact ? "rounded-lg px-3 py-1.5 text-xs" : "rounded-xl px-4 py-2.5 sm:px-5"}`}
+        >
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Sparkles className="size-4" aria-hidden />}
-          Reveal My Rank
+          {compact ? "Reveal" : "Reveal My Rank"}
         </button>
       </form>
       <AnimatePresence>
         {error && (
-          <motion.p id="rank-err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 text-sm text-critical-text" role="alert">
+          <motion.p id="rank-err" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-2 text-xs text-critical-text" role="alert">
             {error}
           </motion.p>
         )}
@@ -164,106 +168,91 @@ export function RankReveal({ data, row, replayKey, onReplay }: { data: RankData;
 
   return (
     <div
-      className="wf-card rk-shine relative overflow-hidden px-5 py-8 sm:px-10 sm:py-10"
-      style={{ borderColor: `${L.mid}66`, boxShadow: `0 0 0 1px ${L.mid}22 inset, 0 30px 90px -40px ${L.mid}` }}
+      className="rk-shine relative overflow-hidden rounded-xl border bg-[var(--wf-card-2)] px-3 py-3"
+      style={{ borderColor: `${L.mid}66`, boxShadow: `0 0 0 1px ${L.mid}22 inset, 0 20px 50px -30px ${L.mid}` }}
+      aria-live="polite"
     >
-      <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(600px 300px at 50% 0%, ${L.mid}22, transparent 70%)` }} />
+      <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(300px 160px at 50% 0%, ${L.mid}22, transparent 70%)` }} />
       {celebrate && phase >= 1 && <Confetti key={replayKey} colors={[L.light, L.mid]} />}
 
-      <div className="relative flex items-center justify-between gap-3">
-        <div className="text-xs font-bold tracking-[0.25em] text-ink-2 uppercase">Your Financial Resilience Rank</div>
-        <button onClick={onReplay} className="btn btn-outline gap-1 rounded-full px-2.5 py-1 text-xs" aria-label="Replay the rank reveal">
-          <RotateCcw className="size-3.5" aria-hidden /> Replay
+      <div className="relative flex items-center justify-between gap-2">
+        <div className="text-[10px] font-bold tracking-[0.2em] text-ink-2 uppercase">Account #{row.id} · Resilience rank</div>
+        <button onClick={onReplay} className="btn btn-outline gap-1 rounded-full px-2 py-0.5 text-[11px]" aria-label="Replay the rank reveal">
+          <RotateCcw className="size-3" aria-hidden /> Replay
         </button>
       </div>
 
-      <div className="relative mt-6 grid items-center gap-8 md:grid-cols-[1fr_auto_1fr]">
-        {/* rank */}
-        <div className="text-center md:text-left">
-          <div className="text-sm text-ink-2">Rank</div>
-          <div className="tnum rk-glow-text font-semibold tracking-tighter" style={{ ["--rk-glow" as string]: `${L.mid}aa`, fontSize: "clamp(3.5rem, 9vw, 5.5rem)", lineHeight: 1 }}>
-            #{Math.round(rankShown).toLocaleString("en-CA")}
-          </div>
-          <div className="tnum mt-1 text-lg text-ink-2">/ {n.toLocaleString("en-CA")} ranked accounts</div>
-          <AnimatePresence>
-            {phase >= 3 && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold" style={{ background: `${L.mid}26`, color: L.ink }}>
-                Top {top < 1 ? Math.max(0.1, Math.ceil(top * 10) / 10).toFixed(1) : Math.round(top)}%
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* badge */}
-        <div className="flex justify-center">
+      <div className="relative mt-2 grid grid-cols-[auto_1fr] items-center gap-3">
+        <div className="grid h-[106px] w-[92px] place-items-center">
           <AnimatePresence mode="wait">
             {phase >= 1 ? (
-              <motion.div
-                key={`badge-${replayKey}`}
-                initial={{ scale: 0.2, rotate: -25, opacity: 0 }}
-                animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 13 }}
-              >
-                <ResilienceBadge league={league} size={168} />
+              <motion.div key={`badge-${replayKey}`} initial={{ scale: 0.2, rotate: -25, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 200, damping: 13 }}>
+                <ResilienceBadge league={league} size={88} label={false} />
               </motion.div>
             ) : (
-              <motion.div key="wait" exit={{ opacity: 0, scale: 0.8 }} className="grid h-[200px] w-[168px] place-items-center">
-                <div className="size-28 animate-pulse rounded-full bg-gradient-to-br from-accent/30 to-[var(--wf-violet)]/30 blur-md" />
-              </motion.div>
+              <motion.div key="wait" exit={{ opacity: 0, scale: 0.8 }} className="size-16 animate-pulse rounded-full bg-gradient-to-br from-accent/30 to-[var(--wf-violet)]/30 blur-md" />
             )}
           </AnimatePresence>
         </div>
-
-        {/* score */}
-        <div className="text-center md:text-right">
-          <div className="text-sm text-ink-2">Resilience Score</div>
-          <div className="tnum font-semibold tracking-tighter" style={{ fontSize: "clamp(3rem, 7vw, 4.5rem)", lineHeight: 1 }}>
-            {scoreShown.toFixed(1)}
-            <span className="text-2xl text-muted">/100</span>
+        <div className="min-w-0">
+          <div className="text-[11px] text-ink-2">Rank</div>
+          <div className="tnum rk-glow-text text-4xl leading-none font-semibold tracking-tighter xl:text-5xl" style={{ ["--rk-glow" as string]: `${L.mid}aa` }}>
+            #{Math.round(rankShown).toLocaleString("en-CA")}
           </div>
-          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-surface-2">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: `linear-gradient(90deg, var(--accent), ${L.mid})`, boxShadow: `0 0 16px ${L.mid}` }}
-              initial={{ width: 0 }}
-              animate={{ width: phase >= 2 ? `${row.score}%` : 0 }}
-              transition={{ duration: reduce ? 0 : 1.1, ease: [0.16, 1, 0.3, 1] }}
-            />
+          <div className="tnum mt-0.5 text-xs text-ink-2">
+            of {n.toLocaleString("en-CA")} ranked ·{" "}
+            <span className="font-semibold" style={{ color: L.ink }}>
+              Top {top < 1 ? Math.max(0.1, Math.ceil(top * 10) / 10).toFixed(1) : Math.round(top)}%
+            </span>
           </div>
-          <AnimatePresence>
-            {phase >= 3 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-2 text-sm text-ink-2">
-                {nl.next ? (
-                  <>
-                    <span className="tnum font-semibold text-ink">{nl.gap?.toFixed(1)}</span> points to {LEAGUE_STYLE[nl.next].name}
-                  </>
-                ) : (
-                  "Top league reached"
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
 
-      <AnimatePresence>
-        {phase >= 4 && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative mt-8 flex flex-col items-center gap-3 text-center">
-            <p className="max-w-xl text-lg text-ink">{L.message}</p>
-            <div className="inline-flex items-center gap-2 rounded-full border border-line bg-[var(--wf-card-2)] px-3.5 py-1.5 text-sm">
-              <Sparkles className="size-4 text-accent-ink" aria-hidden />
-              Strongest category: <span className="font-semibold">{CATEGORY_META[strong].name}</span>
-              <span className="tnum text-muted">{row[strong].toFixed(0)}/100</span>
-            </div>
-            <p className="text-xs text-muted">Your rank is not just a number. It’s a starting point for building a stronger financial future.</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      {phase < 1 && (
-        <div className="relative mt-6 flex items-center justify-center gap-2 text-sm text-muted">
-          <Loader2 className="size-4 animate-spin" aria-hidden /> Comparing with {n.toLocaleString("en-CA")} accounts…
+      <div className="relative mt-2">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="flex items-center gap-1 text-[11px] text-ink-2">
+            Resilience score <ProvTip k="score" />
+          </span>
+          <span className="tnum text-2xl font-semibold tracking-tight">
+            {scoreShown.toFixed(1)}
+            <span className="text-sm text-muted">/100</span>
+          </span>
         </div>
-      )}
+        <div className="mt-1 h-2 overflow-hidden rounded-full bg-surface-2">
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: `linear-gradient(90deg, var(--accent), ${L.mid})`, boxShadow: `0 0 12px ${L.mid}` }}
+            initial={{ width: 0 }}
+            animate={{ width: phase >= 2 ? `${row.score}%` : 0 }}
+            transition={{ duration: reduce ? 0 : 1.1, ease: [0.16, 1, 0.3, 1] }}
+          />
+        </div>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-1 text-[11px] text-ink-2">
+          <span>
+            <span className="font-semibold" style={{ color: L.ink }}>
+              {L.name} League
+            </span>
+            {nl.next && (
+              <>
+                {" "}
+                · <span className="tnum font-semibold text-ink">{nl.gap?.toFixed(1)}</span> pts to {LEAGUE_STYLE[nl.next].name}
+              </>
+            )}
+          </span>
+          {phase >= 4 && (
+            <span className="inline-flex items-center gap-1">
+              <Sparkles className="size-3 text-accent-ink" aria-hidden /> Strongest: <b className="text-ink">{CATEGORY_META[strong].short}</b>
+            </span>
+          )}
+        </div>
+        {phase >= 4 ? (
+          <p className="mt-1.5 text-xs text-ink">{L.message}</p>
+        ) : (
+          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+            <Loader2 className="size-3.5 animate-spin" aria-hidden /> Comparing with {n.toLocaleString("en-CA")} accounts…
+          </div>
+        )}
+      </div>
     </div>
   );
 }
