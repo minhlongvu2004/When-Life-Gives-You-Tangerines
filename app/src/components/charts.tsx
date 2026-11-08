@@ -90,8 +90,8 @@ export function BalanceChart({ rows, buffer }: { rows: MonthRow[]; buffer: numbe
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-sm font-medium">Savings over time</div>
-        <span className="text-xs text-muted">dashed = savings B ({money(buffer)}, last 6 mo)</span>
+        <div className="text-sm font-medium">Account balance over time</div>
+        <span className="text-xs text-muted">dashed = 6-month average ({money(buffer)})</span>
       </div>
       <div className="h-40">
         <ResponsiveContainer>
@@ -154,11 +154,11 @@ export function DepletionChart({
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm font-medium">Savings buffer, month by month</div>
+        <div className="text-sm font-medium">Account balance, month by month</div>
         <div className="flex flex-wrap gap-3">
-          <LegendKey color="var(--series-1)" label="No shock" />
-          {hasShock && <LegendKey color="var(--series-2)" label="With shock" />}
-          {withPlan && <LegendKey color="var(--good)" label="Shock + backup plan" />}
+          <LegendKey color="var(--series-1)" label="Without the what-if" />
+          {hasShock && <LegendKey color="var(--series-2)" label="With the what-if" />}
+          {withPlan && <LegendKey color="var(--good)" label="What-if + recovery plan" />}
         </div>
       </div>
       <div className="h-60">
@@ -187,10 +187,10 @@ export function DepletionChart({
               content={({ active, payload, label }) =>
                 active && payload?.length ? (
                   <TipBox
-                    title={Number(label) === 0 ? "Now (after one-off costs)" : `Month ${label}${Number(label) <= duration ? " · shock" : " · after shock"}`}
+                    title={Number(label) === 0 ? "Now (after one-time costs)" : `Month ${label}${Number(label) <= duration ? " · what-if period" : " · after it ends"}`}
                     rows={[
-                      { color: "var(--series-1)", label: "No shock", value: money(Number(payload[0]?.payload.baseline)) },
-                      { color: "var(--series-2)", label: "With shock", value: money(Number(payload[0]?.payload.balance)) },
+                      { color: "var(--series-1)", label: "Without the what-if", value: money(Number(payload[0]?.payload.baseline)) },
+                      { color: "var(--series-2)", label: "With the what-if", value: money(Number(payload[0]?.payload.balance)) },
                       ...(withPlan ? [{ color: "var(--good)", label: "With backup plan", value: money(Number(payload[0]?.payload.plan)) }] : []),
                     ]}
                   />
@@ -215,8 +215,8 @@ export function DepletionChart({
       </div>
       <div className="mt-1 text-xs text-muted">
         {hasShock
-          ? `Shaded = shock period (${duration} months). After it ends, the usual pattern resumes and backup-plan cuts stop.`
-          : "Apply a shock to see how fast the buffer drains."}
+          ? `Shaded = the what-if period (${duration} months). After it ends, the usual pattern resumes and recovery-plan cuts stop.`
+          : "Set up a what-if to see how fast the balance drops."}
       </div>
     </div>
   );

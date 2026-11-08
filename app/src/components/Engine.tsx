@@ -4,16 +4,20 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Search, Shuffle, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
+import { loadClientMap, loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
+import { parseId, resolveId, type ClientRole, type Resolved } from "@/lib/ids";
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
-import { StepCustomer, StepPlan, StepShock, type Peers } from "./guided";
+import { StepCustomer, StepShock, type Peers } from "./guided";
+import { StepPlan } from "./RecoveryPlan";
 
 const FIFTHS = ["lowest", "low", "middle", "high", "highest"];
-const STEPS = ["Customer", "Shock", "Recovery Plan"] as const;
+const STEPS = ["Customer", "What if?", "Recovery Plan"] as const;
 
 export function Engine() {
   const metrics = usePromise(loadMetrics, []);
   const findings = usePromise(loadFindings, []);
+  const clients = usePromise(loadClientMap, []);
+  const [via, setVia] = useState<{ client: number; role: ClientRole } | null>(null);
   const [id, setId] = useState<number | null>(null);
   const [step, setStep] = useState(0);
   const [mode, setMode] = useState<Mode>("judge");
@@ -23,7 +27,11 @@ export function Engine() {
   const all = useMemo(() => (metrics ? [...metrics.values()] : []), [metrics]);
   const sortedI = useMemo(() => all.map((x) => x.I).sort((a, b) => a - b), [all]);
 
-  const open = useCallback((n: number) => {
+  const resolve = useCallback((n: number | null) => resolveId(n, (x) => !!metrics?.has(x), clients), [metrics, clients]);
+
+  const open = useCallback((r: Resolved) => {
+    const n = r.account;
+    setVia(r.client !== undefined && r.role ? { client: r.client, role: r.role } : null);
     setId(n);
     setStep(0);
     setDetail(undefined);
@@ -34,17 +42,18 @@ export function Engine() {
   }, []);
   const close = () => {
     setId(null);
+    setVia(null);
     const url = new URL(window.location.href);
     url.searchParams.delete("id");
     window.history.replaceState(null, "", url);
   };
 
   useEffect(() => {
-    if (!metrics || id !== null) return;
-    const q = Number(new URLSearchParams(window.location.search).get("id"));
-    if (q && metrics.has(q)) open(q);
+    if (!metrics || !clients || id !== null) return;
+    const r = resolve(parseId(new URLSearchParams(window.location.search).get("id") ?? ""));
+    if (r) open(r);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [metrics]);
+  }, [metrics, clients]);
 
   useEffect(() => {
     if (id === null) return;
@@ -79,21 +88,27 @@ export function Engine() {
 
   if (!m)
     return (
-      <Landing ready={!!metrics} featured={findings?.featured ?? []} onOpen={(n) => metrics?.has(n) && open(n)} has={(n) => !!metrics?.has(n)} all={all} />
+      <Landing ready={!!metrics && !!clients} featured={findings?.featured ?? []} onOpen={open} resolve={resolve} all={all} />
     );
 
   const who = detail?.owner
-    ? `${detail.owner.gender === "F" ? "Woman" : detail.owner.gender === "M" ? "Man" : "Customer"}${detail.owner.age ? `, ${detail.owner.age}` : ""} · ${detail.region}`
+    ? `${via?.role === "authorized user" ? "Account owner: " : ""}${detail.owner.gender === "F" ? "Woman" : detail.owner.gender === "M" ? "Man" : "Customer"}${detail.owner.age ? `, ${detail.owner.age}` : ""} · ${detail.region}`
     : "";
 
   return (
     <div>
       {/* customer pill + stepper */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-1.5 pl-4 shadow-sm">
           <span className="text-sm">
             <span className="tnum font-semibold">#{m.id}</span>
             {who && <span className="hidden text-ink-2 sm:inline"> · {who}</span>}
+            {via && (
+              <span className="hidden text-muted md:inline">
+                {" "}
+                · via client {via.client} ({via.role})
+              </span>
+            )}
           </span>
           <button
             onClick={close}
@@ -108,7 +123,7 @@ export function Engine() {
             <button
               key={s}
               onClick={() => setStep(i)}
-              className={`relative flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${step === i ? "text-page" : "text-ink-2 hover:text-ink"}`}
+              className={`relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors sm:gap-2 sm:px-4 sm:text-sm ${step === i ? "text-page" : "text-ink-2 hover:text-ink"}`}
             >
               {step === i && (
                 <motion.span
@@ -135,7 +150,7 @@ export function Engine() {
         >
           {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} />}
           {step === 1 && <StepShock m={m} mode={mode} setMode={setMode} shock={shock} setShock={setShock} all={all} onNext={() => setStep(2)} />}
-          {step === 2 && <StepPlan m={m} mode={mode} shock={shock} onRestart={close} />}
+          {step === 2 && <StepPlan m={m} mode={mode} shock={shock} rows={rows} onRestart={close} />}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -146,25 +161,25 @@ function Landing({
   ready,
   featured,
   onOpen,
-  has,
+  resolve,
   all,
 }: {
   ready: boolean;
   featured: { id: number; label: string }[];
-  onOpen: (n: number) => void;
-  has: (n: number) => boolean;
+  onOpen: (r: Resolved) => void;
+  resolve: (n: number | null) => Resolved | null;
   all: { id: number }[];
 }) {
   const [v, setV] = useState("");
   const [err, setErr] = useState("");
   const ref = useRef<HTMLInputElement>(null);
   const go = (raw: string) => {
-    const n = Number(raw.trim());
-    if (!has(n)) {
-      setErr("No customer with that ID. Try one of the examples below.");
+    const r = resolve(parseId(raw));
+    if (!r) {
+      setErr("No customer with that ID. Enter an account ID or a client ID from the dataset, or try an example below.");
       return;
     }
-    onOpen(n);
+    onOpen(r);
   };
   return (
     <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -195,7 +210,7 @@ function Landing({
               setV(e.target.value);
               setErr("");
             }}
-            placeholder={ready ? "Enter an account ID" : "Loading…"}
+            placeholder={ready ? "Enter an account or client ID" : "Loading…"}
             className="tnum min-w-0 flex-1 bg-transparent py-2 text-lg outline-none placeholder:text-muted"
             aria-label="Account ID"
           />
@@ -211,14 +226,14 @@ function Landing({
           {featured.slice(0, 3).map((f) => (
             <button
               key={f.id}
-              onClick={() => onOpen(f.id)}
+              onClick={() => onOpen({ account: f.id })}
               className="rounded-full border border-line bg-surface/70 px-3.5 py-1.5 text-ink-2 hover:border-accent hover:text-ink"
             >
               {f.label}
             </button>
           ))}
           <button
-            onClick={() => all.length && onOpen(all[Math.floor(Math.random() * all.length)].id)}
+            onClick={() => all.length && onOpen({ account: all[Math.floor(Math.random() * all.length)].id })}
             className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted hover:text-ink"
           >
             <Shuffle className="size-3.5" aria-hidden /> Surprise me
