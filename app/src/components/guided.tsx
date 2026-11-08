@@ -251,8 +251,8 @@ export function StepCustomer({ m, rows, peers, mode, onNext }: { m: Metrics; row
       : `At this pace their ${k(m.B)} of savings lasts ${months(base.runway)} months.`;
 
   return (
-    <div className="space-y-6">
-      <div className="grid items-center gap-10 md:grid-cols-[auto_1fr]">
+    <div className="space-y-4">
+      <div className="grid items-center gap-8 md:grid-cols-[auto_1fr]">
         <div className="mx-auto">
           <RunwayRing
             runway={Math.round(bufMonths * 10) / 10}
@@ -357,7 +357,7 @@ export function StepShock({
         : `That's ${v.monthsShort.toFixed(1)} months short. They'd need ${k(v.moneyNeeded)} more saved.`;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* twist bar */}
       <div>
         <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface p-2 pl-4 shadow-sm focus-within:border-accent">
@@ -572,7 +572,7 @@ export function StepPlan({ m, mode, shock, onRestart }: { m: Metrics; mode: Mode
   }, [explKey]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="text-center">
         <h2 className="text-3xl font-semibold tracking-tight">Two plans, built from their own numbers.</h2>
         <p className="mx-auto mt-1 max-w-2xl text-ink-2">

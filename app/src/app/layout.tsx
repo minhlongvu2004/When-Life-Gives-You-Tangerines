@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
+import { FitToScreen } from "@/components/FitToScreen";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
@@ -14,9 +15,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen antialiased">
+      <body className="flex h-dvh flex-col overflow-hidden antialiased">
         <SiteHeader />
-        <main className="mx-auto max-w-6xl px-4 pb-4 sm:px-6">{children}</main>
+        <FitToScreen>{children}</FitToScreen>
       </body>
     </html>
   );

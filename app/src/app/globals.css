@@ -2,75 +2,28 @@
 
 :root {
   color-scheme: light;
-  --page: #f7f5f1;
-  --surface: #fcfcfb;
-  --surface-2: #f2f0ea;
-  --ink: #0b0b0b;
-  --ink-2: #52514e;
-  --muted: #7a7873;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --border: rgba(11, 11, 11, 0.1);
-  --accent: #e2602b;
-  --accent-ink: #b8461a;
-  --accent-soft: #fdeae0;
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --good: #0ca30c;
-  --good-text: #006300;
-  --good-soft: #e3f4e3;
+  --page: #faf9f9;
+  --surface: #ffffff;
+  --surface-2: #f0f0ef;
+  --ink: #3a3835;
+  --ink-2: #55524d;
+  --muted: #716b60;
+  --grid: #e9e8e5;
+  --axis: #bfb7b3;
+  --border: rgba(58, 56, 53, 0.12);
+  --accent: #f2691d;
+  --accent-ink: #c24e0e;
+  --accent-soft: #fdeadd;
+  --series-1: #27455c;
+  --series-2: #f2691d;
+  --good: #6cc04a;
+  --good-text: #2f7d14;
+  --good-soft: #e8f5e0;
   --critical: #d03b3b;
   --critical-text: #b42828;
   --critical-soft: #fbe6e6;
   --warning: #fab219;
-  --warning-soft: #fdf2d8;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --page: #0d0d0d;
-    --surface: #1a1a19;
-    --surface-2: #232321;
-    --ink: #f0efec;
-    --ink-2: #c3c2b7;
-    --muted: #8f8d87;
-    --grid: #2c2c2a;
-    --axis: #383835;
-    --border: rgba(255, 255, 255, 0.1);
-    --accent: #f07a43;
-    --accent-ink: #f59a6c;
-    --accent-soft: #3a2216;
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --good-text: #3fc23f;
-    --good-soft: #142a14;
-    --critical-text: #ef7b7b;
-    --critical-soft: #331616;
-    --warning-soft: #33280d;
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #0d0d0d;
-  --surface: #1a1a19;
-  --surface-2: #232321;
-  --ink: #f0efec;
-  --ink-2: #c3c2b7;
-  --muted: #8f8d87;
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --border: rgba(255, 255, 255, 0.1);
-  --accent: #f07a43;
-  --accent-ink: #f59a6c;
-  --accent-soft: #3a2216;
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --good-text: #3fc23f;
-  --good-soft: #142a14;
-  --critical-text: #ef7b7b;
-  --critical-soft: #331616;
-  --warning-soft: #33280d;
+  --warning-soft: #faf9ec;
 }
 
 @theme inline {

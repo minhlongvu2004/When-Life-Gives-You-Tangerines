@@ -7,6 +7,8 @@ const NAV = [
   { href: "/", label: "Engine" },
   { href: "/finding", label: "Finding" },
   { href: "/method", label: "Method" },
+  { href: "/whatif", label: "What If" },
+  { href: "/rank", label: "Rank" },
 ];
 
 export function TangerineMark({ size = 26 }: { size?: number }) {
@@ -23,20 +25,20 @@ export function TangerineMark({ size = 26 }: { size?: number }) {
 export function SiteHeader() {
   const path = usePathname();
   return (
-    <header className="sticky top-0 z-40 bg-page/75 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6">
+    <header className="z-40 shrink-0 bg-page/75 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2 sm:px-6">
         <Link href="/" className="flex min-w-0 items-center gap-2">
           <TangerineMark />
           <span className="hidden truncate text-[15px] font-semibold tracking-tight sm:inline">When Life Gives You Tangerines</span>
         </Link>
-        <nav className="ml-auto flex gap-1 text-sm">
+        <nav className="ml-auto flex gap-0.5 text-[13px] sm:gap-1 sm:text-sm">
           {NAV.map((n) => {
             const active = n.href === "/" ? path === "/" : path?.startsWith(n.href);
             return (
               <Link
                 key={n.href}
                 href={n.href}
-                className={`rounded-full px-3.5 py-1.5 font-medium transition-colors ${active ? "bg-ink text-page" : "text-ink-2 hover:text-ink"}`}
+                className={`rounded-full px-2 py-1.5 font-medium whitespace-nowrap transition-colors sm:px-3.5 ${active ? "bg-ink text-page" : "text-ink-2 hover:text-ink"}`}
               >
                 {n.label}
               </Link>

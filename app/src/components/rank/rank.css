@@ -1,0 +1,68 @@
+/* Rank page extras. The dark navy theme itself comes from ../whatif/whatif.css (.wf-root). */
+
+.rk-glow-text {
+  text-shadow: 0 0 28px var(--rk-glow, rgba(242, 105, 29, 0.55));
+}
+.rk-shine {
+  position: relative;
+  overflow: hidden;
+}
+.rk-shine::after {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -60%;
+  width: 40%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  animation: rk-sweep 3.8s ease-in-out infinite;
+}
+@keyframes rk-sweep {
+  0%,
+  55% {
+    left: -60%;
+  }
+  100% {
+    left: 130%;
+  }
+}
+@keyframes rk-fall {
+  0% {
+    transform: translate3d(0, -20px, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--dx, 0), 620px, 0) rotate(var(--rot, 540deg));
+    opacity: 0;
+  }
+}
+.rk-confetti {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: rk-fall var(--dur, 2.6s) cubic-bezier(0.2, 0.6, 0.4, 1) var(--delay, 0s) forwards;
+  opacity: 0;
+}
+@keyframes rk-marker {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(242, 105, 29, 0.7), 0 0 18px rgba(242, 105, 29, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(242, 105, 29, 0), 0 0 26px rgba(242, 105, 29, 0.9);
+  }
+}
+.rk-marker {
+  animation: rk-marker 2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rk-shine::after,
+  .rk-confetti,
+  .rk-marker {
+    animation: none;
+  }
+  .rk-confetti {
+    display: none;
+  }
+}
