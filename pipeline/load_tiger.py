@@ -94,6 +94,24 @@ def run_sql_file(url: str, path: str) -> int:
     return len(statements)
 
 
+def load_findings(url: str) -> None:
+    """Store findings.json (AUCs, scenario shares, featured picks) as one jsonb row.
+
+    These are analytics from build_data.py, not per-customer numbers, so they
+    are served as-is by /api/findings. Rebuild them with build_data.py first.
+    """
+    path = os.path.join(ROOT, "app", "public", "data", "findings.json")
+    if not os.path.exists(path):
+        print("findings.json not found: run pipeline/build_data.py first. Skipping.")
+        return
+    body = open(path, encoding="utf-8").read()
+    with psycopg.connect(url, connect_timeout=20) as conn:
+        conn.execute("DROP TABLE IF EXISTS findings")
+        conn.execute("CREATE TABLE findings (id text PRIMARY KEY, body jsonb NOT NULL)")
+        conn.execute("INSERT INTO findings VALUES ('main', %s::jsonb)", (body,))
+    print("findings: loaded 1 row.")
+
+
 def main() -> None:
     data = find_data_dir()
     print("data:", data)
@@ -141,6 +159,8 @@ def main() -> None:
     if not ok or not hyper:
         raise SystemExit("FAILED: row counts differ or hypertable missing.")
     print("OK: every table matches its CSV.")
+
+    load_findings(database_url())
 
     n = run_sql_file(database_url(), os.path.join(ROOT, "pipeline", "sql", "metrics.sql"))
     print(f"metrics.sql: ran {n} statements.")
