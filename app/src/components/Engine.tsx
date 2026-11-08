@@ -8,6 +8,7 @@ import { loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type Acco
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
 import { nowYM } from "@/lib/whatif/scenarios";
 import { effectiveShock } from "@/lib/planCards";
+import { isShock, SHOCK_PRESETS } from "@/lib/shocks";
 import { AskPanel } from "./AskPanel";
 import { StepCustomer, StepPlan, StepShock, type Peers } from "./guided";
 
@@ -138,7 +139,11 @@ export function Engine() {
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="flex flex-col justify-center pb-2"
         >
-          {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} />}
+          {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => {
+            // "Hit them with a shock" must hit them with one: open on the brief's first twist unless one is already set
+            if (!isShock(shock)) setShock(SHOCK_PRESETS.find((p) => p.key === "job")!.build(m));
+            setStep(1);
+          }} />}
           {step === 1 && <StepShock
               m={m}
               mode={mode}
