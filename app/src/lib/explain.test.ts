@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { backupPlan, decodeMetrics, NO_SHOCK, type Metrics, type MetricsFile, type Shock } from "./engine";
 import {
   buildPrompt,
@@ -8,7 +8,6 @@ import {
   explain,
   fillExplanation,
   fillSlots,
-  geminiCall,
   planFacts,
   sanitizeMode,
   sanitizeShock,
@@ -181,25 +180,6 @@ describe("explain(): Gemini first, template as the safety net", () => {
         }
       }
     }
-  });
-});
-
-describe("geminiCall", () => {
-  const ok = (text: string) =>
-    ({ ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text }] } }] }) }) as Response;
-
-  it("sends the key in a header, not the URL, and parses JSON", async () => {
-    const f = vi.fn(async () => ok('{"headline":"x","why":"y","steps":[]}'));
-    const out = await geminiCall({ apiKey: "KEY", model: "m", fetchImpl: f as unknown as typeof fetch })("hi");
-    expect(out).toEqual({ headline: "x", why: "y", steps: [] });
-    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).not.toContain("KEY");
-    expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBe("KEY");
-  });
-
-  it("throws on an HTTP error so the caller can fall back", async () => {
-    const f = vi.fn(async () => ({ ok: false, status: 429 }) as Response);
-    await expect(geminiCall({ apiKey: "k", model: "m", fetchImpl: f as unknown as typeof fetch })("hi")).rejects.toThrow("429");
   });
 });
 

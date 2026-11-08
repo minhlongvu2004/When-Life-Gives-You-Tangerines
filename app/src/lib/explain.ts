@@ -8,6 +8,7 @@
 // If anything goes wrong (error, timeout, rejected reply) the template below is used,
 // so the plan always works. Only imported by the server (the /api/plan route).
 
+import { GEMINI_TIMEOUT_MS, geminiJson, type ModelCall } from "./gemini";
 import {
   backupPlan,
   formatRunway,
@@ -269,29 +270,11 @@ const RESPONSE_SCHEMA = {
   required: ["headline", "why", "steps"],
 };
 
-export const GEMINI_TIMEOUT_MS = 5000;
+export { GEMINI_TIMEOUT_MS, type ModelCall };
 
-export type ModelCall = (prompt: string) => Promise<unknown>;
-
-/** Real Gemini call (REST). Throws on any HTTP error, timeout or unparseable reply. */
-export function geminiCall(opts: { apiKey: string; model: string; fetchImpl?: typeof fetch }): ModelCall {
-  const f = opts.fetchImpl ?? fetch;
-  return async (prompt) => {
-    const res = await f(`https://generativelanguage.googleapis.com/v1beta/models/${opts.model}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": opts.apiKey },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.4, responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA },
-      }),
-      signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
-    });
-    if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
-    const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-    return JSON.parse(text);
-  };
-}
+/** Real Gemini call for the plan explanation. */
+export const geminiCall = (opts: { apiKey: string; model: string; fetchImpl?: typeof fetch }): ModelCall =>
+  geminiJson({ ...opts, schema: RESPONSE_SCHEMA });
 
 /**
  * Ask the model for words, check them, fill the engine's numbers. On any failure,
