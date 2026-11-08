@@ -1,6 +1,8 @@
 import "server-only";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { Pool } from "pg";
-import type { Metrics } from "./engine";
+import { decodeMetrics, type Metrics, type MetricsFile } from "./engine";
 
 /**
  * Tiger Data (Postgres) access. Server-only: importing this from a client
@@ -74,6 +76,12 @@ export async function getMetricsRow(id: number): Promise<Metrics | null> {
   const o: Record<string, unknown> = { id: r.account_id, region: r.region, incomeCV: r.incomeCV ?? null, months: r.months };
   for (const c of METRIC_COLUMNS) o[c] = r[c] ?? 0;
   return o as unknown as Metrics;
+}
+
+/** Same row from the bundled metrics.json, for when the database is down. null if the id is unknown. */
+export async function getMetricsRowFromFile(id: number): Promise<Metrics | null> {
+  const raw = await readFile(join(process.cwd(), "public", "data", "metrics.json"), "utf8");
+  return decodeMetrics(JSON.parse(raw) as MetricsFile).get(id) ?? null;
 }
 
 /* Saved explanations, so repeat plans don't spend Gemini credits. */
