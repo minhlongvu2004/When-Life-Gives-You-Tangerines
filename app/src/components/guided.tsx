@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, ChevronDown, ShieldCheck, SlidersHorizontal, Sparkles, X, XCircle } from "lucide-react";
+import { ArrowRight, ChevronDown, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { formatRunway, NO_SHOCK, scenario, verdict, type Metrics, type Mode, type Shock } from "@/lib/engine";
 import { effectiveShock, planCards, type PlanCard } from "@/lib/planCards";
@@ -35,9 +35,9 @@ const GOAL_MONTHS = 6;
 type Tone = "good" | "warning" | "critical";
 const toneOf = (r: number | null, target = 6): Tone => (r === null || r >= target ? "good" : r >= 3 ? "warning" : "critical");
 const TONE = {
-  good: { ring: "var(--good)", text: "text-good-text", soft: "bg-good-soft", Icon: CheckCircle2, word: "Safe" },
-  warning: { ring: "var(--warning)", text: "text-ink", soft: "bg-warning-soft", Icon: ShieldCheck, word: "Tight" },
-  critical: { ring: "var(--critical)", text: "text-critical-text", soft: "bg-critical-soft", Icon: XCircle, word: "At risk" },
+  good: { ring: "var(--good)" },
+  warning: { ring: "var(--warning)" },
+  critical: { ring: "var(--critical)" },
 };
 
 export { shockLabel };
@@ -48,18 +48,18 @@ export { shockLabel };
 export function RunwayRing({
   runway,
   size = 200,
-  caption,
   label,
+  word,
 }: {
   runway: number | null; // months; null = no shortfall (120+)
   size?: number;
-  caption?: string;
   label?: string;
+  word?: string; // replaces the number, e.g. "Covered" when the shock never drains savings
 }) {
   const tone = toneOf(runway);
   const t = TONE[tone];
   const stroke = size < 160 ? 10 : 14;
-  const numCls = size < 160 ? "text-4xl" : size < 200 ? "text-5xl" : "text-6xl";
+  const numCls = word ? (size < 200 ? "text-3xl" : "text-4xl") : size < 160 ? "text-4xl" : size < 200 ? "text-5xl" : "text-6xl";
   const r = (size - stroke) / 2;
   const C = 2 * Math.PI * r;
   const frac = runway === null ? 1 : Math.min(Math.max(runway, 0), GOAL_MONTHS) / GOAL_MONTHS;
@@ -84,19 +84,16 @@ export function RunwayRing({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
           <motion.div
-            key={months(runway)}
+            key={word ?? months(runway)}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4 }}
             className={`tnum font-semibold tracking-tighter ${numCls}`}
           >
-            {months(runway)}
+            {word ?? months(runway)}
           </motion.div>
           <div className={`mt-0.5 max-w-[70%] leading-tight text-ink-2 ${size < 160 ? "text-xs" : "text-sm"}`}>
             {label ?? (runway === null ? "months · no shortfall" : "months of runway")}
-          </div>
-          <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${t.soft} ${t.text}`}>
-            <t.Icon className="size-3.5" aria-hidden /> {caption ?? t.word}
           </div>
         </div>
       </div>
@@ -228,7 +225,6 @@ export function StepCustomer({ m, rows, peers, mode, onNext }: { m: Metrics; row
             runway={Math.round(bufMonths * 10) / 10}
             size={180}
             label="months of spending saved"
-            caption={bufMonths >= 6 ? "Well cushioned" : bufMonths >= 3 ? "Thin cushion" : "Very thin cushion"}
           />
         </div>
         <div>
@@ -301,6 +297,15 @@ export function StepShock({
   const other = scenario(m, shock, mode === "judge" ? "realistic" : "judge");
   const v = verdict(sc, shock.durationMonths);
   const has = isShock(shock);
+  // the shock costs them something, but they still earn more than they spend, so savings never drain
+  const covered = has && sc.runway === null && sc.bufferLeft > 0;
+  const lostIncome = m.I - sc.income;
+  const extraCost = sc.spending - m.S;
+  const coveredWhat = [
+    lostIncome > 0.5 && `income drops ${k(lostIncome)} a month`,
+    extraCost > 0.5 && `monthly costs rise ${k(extraCost)}`,
+    sc.oneOff > 0 && `a ${k(sc.oneOff)} one-off bill comes out of savings`,
+  ].filter(Boolean) as string[];
 
   const share = useMemo(() => {
     if (!has) return 0;
@@ -409,7 +414,7 @@ export function StepShock({
         <div ref={resultRef} className="min-w-0 scroll-mt-3 lg:sticky lg:top-3">
           <div className={`glass-card flex flex-col p-5 transition-shadow sm:p-6 ${has ? "border-accent/40 ring-4 ring-accent-soft" : ""}`}>
             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left lg:flex-col lg:text-center">
-              <RunwayRing runway={sc.runway} size={170} caption={has ? (v.survives ? "Makes it" : v.wipedOut ? "Wiped out" : "Runs out") : undefined} />
+              <RunwayRing runway={sc.runway} size={170} word={covered ? "Covered" : undefined} label={covered ? "income still covers spending" : undefined} />
               <div className="min-w-0">
                 {has && (
                   <div className="text-sm font-medium text-accent-ink">
@@ -420,6 +425,13 @@ export function StepShock({
                 <p className="mt-2 text-ink-2">{sub}</p>
               </div>
             </div>
+            {covered && (
+              <div className="mt-4 rounded-xl bg-good-soft px-4 py-3 text-sm text-ink">
+                <b className="text-good-text">What it does to them:</b>{" "}
+                {coveredWhat.length ? `${coveredWhat.join(", ").replace(/^./, (c) => c.toUpperCase())}, but` : "Nothing changes, and"} they still keep{" "}
+                <b>{k(Math.max(0, sc.income - sc.spending))}</b> a month, so savings never go down.
+              </div>
+            )}
             {has && (
               <>
                 <div className="mt-5 rounded-xl bg-surface-2 px-4 py-2.5 font-mono text-sm break-words text-ink-2" title="runway = (savings − one-off) ÷ (spending − income)">
