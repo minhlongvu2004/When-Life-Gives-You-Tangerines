@@ -58,11 +58,27 @@ function recoveredAfter(rows: RecoveryRow[], level: number): number | null {
   return lastBelow >= rows.length - 1 ? null : lastBelow + 1;
 }
 
-export function simulateRecovery(i: RecoveryInputs): RecoveryResult {
-  const horizon = i.horizon ?? HORIZON;
-  const share = i.rebuildShare ?? REBUILD_SHARE;
-  const repayMonths = i.repayMonths ?? REPAY_MONTHS;
-  const repayEach = i.deferralPerMonth > 0 ? (i.deferralPerMonth * i.durationMonths) / repayMonths : 0;
+const fin = (x: number) => (Number.isFinite(x) ? x : 0); // a missing or non-finite number counts as 0
+const clampInt = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(Number.isNaN(x) ? lo : x)));
+
+export function simulateRecovery(raw: RecoveryInputs): RecoveryResult {
+  // sanitise first: odd values (a fractional duration, NaN from missing data) must never crash the page
+  const horizon = clampInt(raw.horizon ?? HORIZON, 1, 600);
+  const duration = clampInt(raw.durationMonths, 0, horizon);
+  const share = Math.max(0, Math.min(1, fin(raw.rebuildShare ?? REBUILD_SHARE)));
+  const repayMonths = Math.max(1, clampInt(raw.repayMonths ?? REPAY_MONTHS, 1, 600));
+  const i = {
+    startFunds: fin(raw.startFunds),
+    startGap: fin(raw.startGap),
+    incomeDuring: fin(raw.incomeDuring),
+    incomeAfter: fin(raw.incomeAfter),
+    spendingDuring: fin(raw.spendingDuring),
+    spendingAfter: fin(raw.spendingAfter),
+    deferralPerMonth: fin(raw.deferralPerMonth),
+    starter: fin(raw.starter),
+    target: fin(raw.target),
+  };
+  const repayEach = i.deferralPerMonth > 0 ? (i.deferralPerMonth * duration) / repayMonths : 0;
 
   let funds = Math.max(0, i.startFunds);
   let gap = Math.max(0, i.startGap);
@@ -72,10 +88,10 @@ export function simulateRecovery(i: RecoveryInputs): RecoveryResult {
   let lastShortfall = 0;
 
   for (let t = 1; t <= horizon; t++) {
-    const during = t <= i.durationMonths;
+    const during = t <= duration;
     const income = during ? i.incomeDuring : i.incomeAfter;
     const spending = during ? i.spendingDuring : i.spendingAfter;
-    const repay = !during && t <= i.durationMonths + repayMonths ? repayEach : 0;
+    const repay = !during && t <= duration + repayMonths ? repayEach : 0;
     const net = income - spending - repay;
     if (net < 0) {
       const need = -net;
@@ -101,7 +117,7 @@ export function simulateRecovery(i: RecoveryInputs): RecoveryResult {
     rows,
     runsOutMonth,
     peakGap,
-    gapAtDisruptionEnd: rows[Math.min(i.durationMonths, horizon)].gap,
+    gapAtDisruptionEnd: rows[duration].gap,
     shortfallEndsMonth: lastShortfall === 0 ? 0 : lastShortfall >= horizon ? null : lastShortfall + 1,
     caughtUpMonth: peakGap <= 0 || lastOwing >= horizon ? null : lastOwing + 1,
     backToStarterMonth: recoveredAfter(rows, i.starter),

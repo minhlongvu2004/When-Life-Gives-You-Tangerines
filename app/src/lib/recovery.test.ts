@@ -145,6 +145,20 @@ describe("simulateRecovery: what is uncovered when the disruption ends", () => {
   });
 });
 
+describe("simulateRecovery: odd inputs never throw", () => {
+  it("copes with a fractional, missing or huge duration", () => {
+    for (const durationMonths of [6.5, 0, -3, NaN, Infinity, 500]) {
+      const r = simulateRecovery({ ...base, durationMonths });
+      expect(r.rows).toHaveLength(97);
+      expect(Number.isFinite(r.gapAtDisruptionEnd)).toBe(true);
+    }
+  });
+  it("treats non-finite money values as zero instead of producing NaN", () => {
+    const r = simulateRecovery({ ...base, startFunds: NaN, incomeDuring: Infinity, spendingAfter: NaN, deferralPerMonth: NaN });
+    for (const row of r.rows) expect(Number.isFinite(row.funds) && Number.isFinite(row.gap) && Number.isFinite(row.net)).toBe(true);
+  });
+});
+
 describe("simulateRecovery: edge cases", () => {
   it("if normal income doesn't cover normal spending, nothing is ever rebuilt", () => {
     const r = simulateRecovery({ ...base, incomeAfter: 4000, spendingAfter: 4300 });

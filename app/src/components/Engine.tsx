@@ -1,15 +1,15 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight, Search, Shuffle, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadClientMap, loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
 import { parseId, resolveId, type ClientRole, type Resolved } from "@/lib/ids";
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
-import { dataAsOf } from "@/lib/whatif/scenarios";
 import { StepCustomer, StepShock, type Peers } from "./guided";
 import { StepPlan } from "./RecoveryPlan";
+import { StepBoundary } from "./StepBoundary";
 
 const FIFTHS = ["lowest", "low", "middle", "high", "highest"];
 const STEPS = ["Customer", "What if?", "Recovery Plan"] as const;
@@ -24,7 +24,6 @@ export function Engine() {
   const [mode, setMode] = useState<Mode>("judge");
   const [shock, setShock] = useState<Shock>(NO_SHOCK);
   const [start, setStart] = useState<string | null>(null); // YYYY-MM the shock starts, null = the month after the data ends
-  const now = useMemo(() => dataAsOf(), []);
   const [detail, setDetail] = useState<AccountDetail | null | undefined>(undefined);
 
   const all = useMemo(() => (metrics ? [...metrics.values()] : []), [metrics]);
@@ -146,31 +145,23 @@ export function Engine() {
         </nav>
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${m.id}-${step}`}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className={`flex flex-col justify-center ${step === 1 ? "lg:min-h-0 lg:flex-1" : "pb-2"}`}
-        >
+      {/* No exit animation on purpose: waiting for the old step to finish leaving can freeze on a blank page if anything
+          inside it never finishes animating. The new step simply fades in. */}
+      <motion.div
+        key={`${m.id}-${step}`}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className={`flex flex-col justify-center ${step === 1 ? "lg:min-h-0 lg:flex-1" : "pb-2"}`}
+      >
+        <StepBoundary key={`${m.id}-${step}`} label={STEPS[step]} onBack={() => setStep(0)}>
           {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} historyMissing={detail === null} />}
-          {step === 1 && <StepShock
-              m={m}
-              mode={mode}
-              setMode={setMode}
-              shock={shock}
-              setShock={setShock}
-              start={start}
-              setStart={setStart}
-              now={now}
-              all={all}
-              onNext={() => setStep(2)}
-            />}
+          {step === 1 && (
+            <StepShock m={m} mode={mode} setMode={setMode} shock={shock} setShock={setShock} start={start} setStart={setStart} all={all} onNext={() => setStep(2)} />
+          )}
           {step === 2 && <StepPlan m={m} mode={mode} shock={shock} rows={rows} onRestart={close} />}
-        </motion.div>
-      </AnimatePresence>
+        </StepBoundary>
+      </motion.div>
     </div>
   );
 }

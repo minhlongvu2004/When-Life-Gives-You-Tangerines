@@ -1,17 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, ChevronDown, ShieldCheck, SlidersHorizontal, Sparkles, XCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ChevronDown, ShieldCheck, SlidersHorizontal, XCircle } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { backupPlan, formatRunway, NO_SHOCK, scenario, verdict, type Metrics, type Mode, type Shock } from "@/lib/engine";
 import { isShock, shockLabel } from "@/lib/shocks";
-import { parseTwist } from "@/lib/twist";
 import type { MonthRow } from "@/lib/data";
 import type { ProvKey } from "@/lib/provenance";
-import type { YM } from "@/lib/whatif/scenarios";
 import { BalanceChart, InOutChart } from "./charts";
 import { ProvTip } from "./ProvTip";
-import { CustomShocks } from "./shock/CustomShocks";
 import { ShockControls } from "./shock/ShockFields";
 import { ImpactChart, ImpactTiles, impactStory, useProjection } from "./shock/ShockImpact";
 import { ShockLibrary } from "./shock/ShockLibrary";
@@ -270,7 +267,6 @@ export function StepShock({
   setShock,
   start,
   setStart,
-  now,
   all,
   onNext,
 }: {
@@ -281,13 +277,12 @@ export function StepShock({
   setShock: (s: Shock) => void;
   start: string | null;
   setStart: (s: string | null) => void;
-  now: YM;
   all: Metrics[];
   onNext: () => void;
 }) {
-  const [text, setText] = useState("");
-  const [heard, setHeard] = useState<string[]>([]);
-  const [left, setLeft] = useState<"presets" | "custom" | "adjust">("presets");
+  const [left, setLeft] = useState<"presets" | "adjust">("presets");
+  // true right after a preset is picked, so the Adjust tab can ask the visitor to check the values before continuing
+  const [fromPreset, setFromPreset] = useState(false);
   const [right, setRight] = useState<"chart" | "plan" | "explain">("chart");
   const base = scenario(m, NO_SHOCK, mode);
   const sc = scenario(m, shock, mode);
@@ -307,12 +302,6 @@ export function StepShock({
     return n / all.length;
   }, [all, shock, mode, has]);
 
-  const read = () => {
-    const p = parseTwist(text);
-    setHeard(p.understood.length ? p.understood : ["Couldn't read that. Pick an example or set the values yourself."]);
-    if (p.understood.length) setShock(p.shock);
-  };
-
   const headline = !has
     ? "What would happen to them?"
     : v.wipedOut
@@ -321,49 +310,25 @@ export function StepShock({
         ? `The account covers all ${shock.durationMonths} months.`
         : `The account runs out in month ${Math.max(1, Math.ceil(sc.runway ?? 0))} of ${shock.durationMonths}.`;
   const sub = !has
-    ? "Describe it, pick an example, or set the values yourself."
+    ? "Pick an example or set the values yourself."
     : v.wipedOut
       ? `That's ${k(v.shortToday)} more than the account holds.`
       : v.survives
         ? `About ${k(Math.max(0, v.spare))} left in the account at the end.`
         : `${v.monthsShort.toFixed(1)} months short. About ${k(v.moneyNeeded)} more in the account would cover it.`;
 
+  // picking a preset opens Adjust so the values can be checked and changed before going to the Recovery Plan
   const pick = (s: Shock) => {
     setShock(s);
-    setHeard([]);
+    setFromPreset(true);
+    setLeft("adjust");
   };
 
   return (
     <div data-fill className="grid gap-3 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(360px,5fr)_minmax(0,8fr)] lg:grid-rows-[minmax(0,1fr)]">
       {/* ---------------- left: scenario controls */}
       <section className="ws-panel p-3 lg:min-h-0" aria-label="Scenario controls">
-        <div className="flex items-center gap-2 rounded-xl border border-glass-border bg-glass p-1 pl-3 focus-within:border-accent">
-          <Sparkles className="size-4 shrink-0 text-accent" aria-hidden />
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && read()}
-            placeholder="Describe it, e.g. “I lose my job (EI at 55%) and rent goes up $200 a month”"
-            className="min-w-0 flex-1 bg-transparent py-1.5 text-sm outline-none placeholder:text-muted"
-            aria-label="Describe a what-if"
-          />
-          <button onClick={read} className="btn btn-primary rounded-lg px-3.5 py-1.5 text-xs">
-            Apply
-          </button>
-        </div>
-        <AnimatePresence>
-          {heard.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-1.5 flex flex-wrap gap-1" aria-live="polite">
-              {heard.map((h) => (
-                <span key={h} className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] text-accent-ink">
-                  {h}
-                </span>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <div className="mt-2.5 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <TabBar
             idBase="shock-left"
             label="Shock controls"
@@ -372,7 +337,6 @@ export function StepShock({
             className="flex-1"
             tabs={[
               { value: "presets", label: "Presets" },
-              { value: "custom", label: "My shocks" },
               {
                 value: "adjust",
                 label: (
@@ -384,7 +348,13 @@ export function StepShock({
             ]}
           />
           {has && (
-            <button onClick={() => setShock(NO_SHOCK)} className="btn btn-outline shrink-0 rounded-full px-2.5 py-1 text-[11px]">
+            <button
+              onClick={() => {
+                setShock(NO_SHOCK);
+                setFromPreset(false);
+              }}
+              className="btn btn-outline shrink-0 rounded-full px-2.5 py-1 text-[11px]"
+            >
               Clear
             </button>
           )}
@@ -392,22 +362,13 @@ export function StepShock({
 
         <div id="shock-left-panel" role="tabpanel" aria-labelledby={`shock-left-tab-${left}`} className="ws-scroll mt-2 flex-1 pr-1">
           {left === "presets" && <ShockLibrary bare m={m} shock={shock} onPick={pick} />}
-          {left === "custom" && (
-            <CustomShocks
-              bare
-              m={m}
-              mode={mode}
-              shock={shock}
-              start={start}
-              now={now}
-              onRun={(s, st) => {
-                pick(s);
-                setStart(st);
-              }}
-            />
-          )}
           {left === "adjust" && (
             <div>
+              {fromPreset && has && (
+                <div role="status" className="mb-3 rounded-xl bg-accent-soft px-3 py-2 text-xs text-accent-ink">
+                  <b>Check these values.</b> They come from the preset you picked: <span className="font-medium">{shockLabel(shock)}</span>. Change anything you like, then confirm below.
+                </div>
+              )}
               <p className="mb-3 text-xs text-ink-2">
                 Every value here is a hypothetical assumption. Dollar effects use this account&apos;s own medians. Tap ? for what a field means.
               </p>
@@ -415,6 +376,18 @@ export function StepShock({
             </div>
           )}
         </div>
+
+        {left === "adjust" && (
+          <div className="mt-2 shrink-0 border-t border-line pt-2">
+            {has ? (
+              <NextButton onClick={onNext} small>
+                Confirm and see the Recovery Plan
+              </NextButton>
+            ) : (
+              <p className="text-xs text-muted">Pick a preset, or change a value above, then confirm to see the Recovery Plan.</p>
+            )}
+          </div>
+        )}
       </section>
 
       {/* ---------------- right: simulation results */}
@@ -460,9 +433,6 @@ export function StepShock({
                     {mode === "judge" ? "With the EI weekly maximum" : "With the simple formula (no EI maximum)"}: <b className="tnum text-ink">{months(other.runway)} months</b>
                   </button>
                 )}
-                <NextButton onClick={onNext} small>
-                  Recovery Plan
-                </NextButton>
               </div>
             )}
           </div>
@@ -487,7 +457,7 @@ export function StepShock({
             {!has ? (
               <div className="grid flex-1 place-items-center rounded-xl border border-dashed border-line p-6 text-center text-sm text-ink-2">
                 <div>
-                  <p className="font-semibold text-ink">Pick a preset, type a twist card, or adjust values on the left.</p>
+                  <p className="font-semibold text-ink">Pick a preset, or adjust the values on the left.</p>
                   <p className="mt-1 text-xs text-muted">The tiles above show account #{m.id} with no changes: its own medians from monthly_summary.csv and loans.csv.</p>
                 </div>
               </div>
@@ -497,7 +467,7 @@ export function StepShock({
               <div className="ws-scroll flex-1 pr-1">
                 <p className="mb-2 text-xs text-ink-2">Backup moves for this shock, in order. Each adds runway using this account&apos;s own flexible spending and loan payment.</p>
                 <ol className="space-y-2">
-                  {shock.jobLoss && <PlanStep n={1} title="Apply for EI right away" detail="Within 4 weeks of the last day of work" />}
+                  {shock.jobLoss && <PlanStep n={1} title="Apply for EI as soon as your job ends" detail="Canada.ca explains how and the deadline" />}
                   {steps.slice(1).map((s, i) => (
                     <PlanStep
                       key={s.label}
@@ -510,7 +480,7 @@ export function StepShock({
                   {steps.length <= 1 && !shock.jobLoss && <li className="text-sm text-ink-2">This account has no flexible spending or running loan to adjust, so there are no backup moves to test.</li>}
                 </ol>
                 <p className="mt-3 text-xs text-muted">
-                  Runway with every move: <b className="tnum text-ink">{months(steps[steps.length - 1]?.runway ?? sc.runway)} months</b>. The full goal plan is on the Plan step.
+                  Runway with every move: <b className="tnum text-ink">{months(steps[steps.length - 1]?.runway ?? sc.runway)} months</b>. The full recovery plan is on the next step.
                 </p>
               </div>
             ) : (

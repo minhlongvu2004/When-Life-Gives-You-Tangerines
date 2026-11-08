@@ -173,8 +173,21 @@ export function MethodTabs() {
           </button>
         ))}
       </div>
-      <div role="tabpanel" className="mt-6 max-w-5xl">
-        {TABS[i].body}
+      {/* All four panels sit in the same grid cell and only the selected one is visible, so the area is always as tall
+          as the tallest tab (at any screen width). The page never resizes or jumps when you switch tabs. */}
+      <div className="mt-6 grid max-w-5xl">
+        {TABS.map((t, n) => (
+          <div
+            key={t.label}
+            role="tabpanel"
+            aria-label={t.label}
+            aria-hidden={i !== n}
+            inert={i !== n}
+            className={`[grid-area:1/1] ${i === n ? "" : "invisible"}`}
+          >
+            {t.body}
+          </div>
+        ))}
       </div>
     </div>
   );
