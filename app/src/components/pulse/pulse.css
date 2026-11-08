@@ -1,0 +1,77 @@
+/* Tangerine Pulse palette, scoped to this page. Shared card/button classes come from ../whatif/whatif.css. */
+
+html:has(.pl-root),
+body:has(.pl-root) {
+  color-scheme: dark;
+  --page: #080e20;
+  --surface: #111b33;
+  --surface-2: #18243f;
+  --ink: #f7f9ff;
+  --ink-2: #a6b3cd;
+  --muted: #8592ad;
+  --grid: #22304f;
+  --axis: #3a4870;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #ff8000;
+  --accent-ink: #ffb347;
+  --accent-soft: rgba(255, 128, 0, 0.16);
+  --good: #32d6a0;
+  --good-text: #6ee7c4;
+  --good-soft: rgba(50, 214, 160, 0.13);
+  --warning: #ffbf47;
+  --warning-soft: rgba(255, 191, 71, 0.13);
+  --critical: #ff6b80;
+  --critical-text: #ff9aa9;
+  --critical-soft: rgba(255, 107, 128, 0.13);
+}
+body:has(.pl-root) {
+  background-image:
+    radial-gradient(900px 520px at 50% 18%, rgba(255, 128, 0, 0.14), transparent 70%),
+    radial-gradient(700px 500px at 0% 0%, rgba(139, 92, 246, 0.12), transparent 70%);
+}
+
+.pl-root {
+  --juice: #ff9b18;
+}
+.pl-stage {
+  background:
+    radial-gradient(60% 70% at 50% 45%, rgba(255, 128, 0, 0.12), transparent 70%),
+    linear-gradient(180deg, rgba(17, 27, 51, 0.97), rgba(8, 14, 32, 0.97));
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  box-shadow: 0 30px 80px -40px rgba(255, 128, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.pl-glass {
+  background: rgba(17, 27, 51, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+}
+.pl-connector {
+  background: linear-gradient(90deg, transparent, rgba(255, 179, 71, 0.45));
+  height: 1px;
+}
+.pl-connector-r {
+  background: linear-gradient(270deg, transparent, rgba(255, 179, 71, 0.45));
+  height: 1px;
+}
+@keyframes pl-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+.pl-ring {
+  animation: pl-ring 1.6s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pl-ring {
+    animation: none;
+    opacity: 0;
+  }
+}

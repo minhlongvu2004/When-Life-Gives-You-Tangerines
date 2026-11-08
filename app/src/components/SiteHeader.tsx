@@ -9,6 +9,7 @@ const NAV = [
   { href: "/method", label: "Method" },
   { href: "/whatif", label: "What If" },
   { href: "/rank", label: "Rank" },
+  { href: "/pulse", label: "Pulse" },
 ];
 
 export function TangerineMark({ size = 26 }: { size?: number }) {
@@ -27,11 +28,11 @@ export function SiteHeader() {
   return (
     <header className="z-40 shrink-0 bg-page/75 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2 sm:px-6">
-        <Link href="/" className="flex min-w-0 items-center gap-2">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <TangerineMark />
           <span className="hidden truncate text-[15px] font-semibold tracking-tight sm:inline">When Life Gives You Tangerines</span>
         </Link>
-        <nav className="ml-auto flex gap-0.5 text-[13px] sm:gap-1 sm:text-sm">
+        <nav className="-mr-2 ml-auto flex min-w-0 gap-0.5 overflow-x-auto pr-2 text-[13px] [scrollbar-width:none] sm:mr-0 sm:gap-1 sm:pr-0 sm:text-sm">
           {NAV.map((n) => {
             const active = n.href === "/" ? path === "/" : path?.startsWith(n.href);
             return (
