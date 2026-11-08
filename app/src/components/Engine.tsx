@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
 import { nowYM } from "@/lib/whatif/scenarios";
+import { effectiveShock } from "@/lib/planCards";
+import { AskPanel } from "./AskPanel";
 import { StepCustomer, StepPlan, StepShock, type Peers } from "./guided";
 
 const FIFTHS = ["lowest", "low", "middle", "high", "highest"];
@@ -152,6 +154,7 @@ export function Engine() {
           {step === 2 && <StepPlan m={m} mode={mode} shock={shock} start={start} now={now} />}
         </motion.div>
       </AnimatePresence>
+      {step === 2 && <AskPanel m={m} shock={effectiveShock(shock)} mode={mode} />}
     </div>
   );
 }

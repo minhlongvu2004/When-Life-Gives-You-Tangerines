@@ -356,3 +356,13 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
     transition: none !important;
   }
 }
+
+/* Ask about this plan: panel pop-in and typing dots */
+@keyframes askpop {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes askblink {
+  0%, 60%, 100% { opacity: 0.3; }
+  30% { opacity: 1; }
+}

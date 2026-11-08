@@ -72,6 +72,8 @@ The app walks you through three steps: **1 Customer → 2 Shock → 3 Plan**. Sa
 
 - **"Why do your numbers differ from ours?"** They don't in Judge mode: it's your definitions verbatim, verified on 36,000 cases. Realistic mode is labelled and shown next to it: EI is capped at $729/week (canada.ca, 2026), and pensions don't stop when a job does.
 - **"Why medians?"** Yours, and they're robust: one bonus month or one big purchase doesn't move the typical month.
+- **"How long could a layoff last?"** Open **Ask about this plan** and tap that question: average job search in Canada 22.8 weeks (Statistics Canada), EI up to 36-45 weeks by region (EI Act Schedule I), against how long their savings last. Sources are linked in the answer.
+- **"Is Gemini making up the numbers?"** No. The engine computes every number; Gemini only rewords the sentence, and the app rejects its reply if it has a digit or drops a number (then the plain template is used).
 - **"How do you pick the cut?"** Lean month: what that customer already spent in their leanest months, capped at 50% (about what a typical customer's lean month looks like).
 - **"How do you pick the emergency-fund target?"** The larger of 6 × the monthly gap on EI (so they survive a full 6-month claim) and 3 × fixed costs. It's personal, not a generic "3–6 months".
 - **"What counts as flexible spending?"** Card spending, genuine cash withdrawals and unlabelled transfers out. Bills, insurance, loans and fees are must-pay. It's a heuristic: cash can hide rent, so the cut is the customer's own lean month (their 25th-percentile month of flexible spending), kept between 10% and 50%.

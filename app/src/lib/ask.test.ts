@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { decodeMetrics, NO_SHOCK, type MetricsFile } from "./engine";
-import { answer, answerTemplate, checkAnswer, eiWeeksFullTime, QUESTIONS, sanitizeQuestion, toSegments, type QuestionId } from "./ask";
+import { answer, answerTemplate, checkAnswer, eiWeeksFullTime, QUESTIONS, sanitizeMode, sanitizeQuestion, sanitizeShock, toSegments, type QuestionId } from "./ask";
 
 const root = join(__dirname, "..", "..");
 const metrics = decodeMetrics(JSON.parse(readFileSync(join(root, "public", "data", "metrics.json"), "utf8")) as MetricsFile);
@@ -88,4 +88,21 @@ describe("ask answers", () => {
     expect(a.segments.filter((s) => "num" in s).map((s) => (s as { num: string }).num)).toContain("2.1");
   });
   it("eiWeeksFullTime follows Schedule I", () => expect([2.9, 6, 6.5, 7.07, 9.4, 12].map(eiWeeksFullTime)).toEqual([36, 36, 38, 40, 44, 45]));
+});
+
+describe("request validation", () => {
+  it("accepts a normal shock and rejects bad ones", () => {
+    expect(sanitizeShock(JOB)).toEqual(JOB);
+    expect(sanitizeShock({ ...JOB, incomePct: -1 })).toBeNull();
+    expect(sanitizeShock({ ...JOB, extraMonthly: 1e9 })).toBeNull();
+    expect(sanitizeShock({ ...JOB, jobLoss: "yes" })).toBeNull();
+    expect(sanitizeShock({ ...JOB, durationMonths: NaN })).toBeNull();
+    expect(sanitizeShock(null)).toBeNull();
+    expect(sanitizeShock("x")).toBeNull();
+  });
+  it("only two modes", () => {
+    expect(sanitizeMode("judge")).toBe("judge");
+    expect(sanitizeMode("realistic")).toBe("realistic");
+    expect(sanitizeMode("admin")).toBeNull();
+  });
 });

@@ -279,3 +279,35 @@ export async function answer(q: QuestionId, m: Metrics, shock: Shock, mode: Mode
 export function sanitizeQuestion(raw: unknown): QuestionId | null {
   return QUESTIONS.some((x) => x.id === raw) ? (raw as QuestionId) : null;
 }
+
+/* ------------------------------------------------------------------ input checks (moved from explain.ts) */
+
+const num = (v: unknown, lo: number, hi: number): number | null =>
+  typeof v === "number" && Number.isFinite(v) && v >= lo && v <= hi ? v : null;
+
+/** Validate a shock coming from the browser. Returns null if anything is off. */
+export function sanitizeShock(raw: unknown): Shock | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  const incomePct = num(r.incomePct, 0, 2);
+  const billsPct = num(r.billsPct, -1, 2);
+  const extraMonthly = num(r.extraMonthly, 0, 20_000);
+  const oneOffMult = num(r.oneOffMult, 0, 12);
+  const oneOffAbs = num(r.oneOffAbs, 0, 200_000);
+  const durationMonths = num(r.durationMonths, 1, 24);
+  if ([incomePct, billsPct, extraMonthly, oneOffMult, oneOffAbs, durationMonths].some((x) => x === null)) return null;
+  if (typeof r.jobLoss !== "boolean") return null;
+  return {
+    incomePct: incomePct!,
+    jobLoss: r.jobLoss,
+    billsPct: billsPct!,
+    extraMonthly: extraMonthly!,
+    oneOffMult: oneOffMult!,
+    oneOffAbs: oneOffAbs!,
+    durationMonths: durationMonths!,
+  };
+}
+
+export function sanitizeMode(raw: unknown): Mode | null {
+  return raw === "judge" || raw === "realistic" ? raw : null;
+}

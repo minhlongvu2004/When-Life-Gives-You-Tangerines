@@ -166,7 +166,7 @@ export const sameShock = (a: Shock, b: Shock) =>
   (["incomePct", "billsPct", "extraMonthly", "oneOffMult", "oneOffAbs", "durationMonths"] as const).every((k) => Math.abs(a[k] - b[k]) < 1e-9);
 
 /* ------------------------------------------------------------------ field rules
-   Limits match the server's sanitizeShock() so any shock built here can be explained by /api/plan. */
+   Limits match the server's sanitizeShock() so any shock built here can be answered by /api/ask. */
 
 export type FieldKey = "incomePct" | "billsPct" | "extraMonthly" | "oneOffMult" | "oneOffAbs" | "durationMonths";
 

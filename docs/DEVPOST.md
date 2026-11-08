@@ -8,7 +8,8 @@ When Life Gives You Tangerines is a resilience engine for real bank customers. E
 
 1. **Knows the customer.** It shows typical monthly income, fixed costs, spending, household bills, loan payment and savings buffer, along with runway in months, compared against peers in the same income band. Charts show their real money in and out and their balance history.
 2. **Takes a shock.** Apply a job loss with EI, a bills or rent increase, a surprise repair, or any mix. You can use sliders, one-click presets, or type the twist card in plain English ("They lose their job (EI at 55%) and household bills go up 15%"). Runway, a "do they make it?" verdict, a month-by-month buffer chart and a "show the math" breakdown update instantly.
-3. **Makes a plan.** A **goal plan** sizes a personal emergency fund that survives 6 months of EI and says how much to save each month and when it will be fully funded. A **backup plan** lists ordered moves for the day the shock hits (file EI, trim flexible spending, defer the loan, survival mode), each showing the runway it adds.
+3. **Makes a plan.** Three cards answer one question, "if the shock hits, how long does their money last?": **Do nothing**, **Short term** (pause the loan, cut flexible spending back to the customer's own lean month) and **Long term** (build a personal emergency fund first, then the shock hits). Every card ends in the same runway number.
+4. **Explains itself.** An "Ask about this plan" chatbot answers why 6 months, why this cut and how long a layoff could last, with links to Statistics Canada, the EI Act (Schedule I), CIRO and canada.ca. Numbers come only from the rules engine; Gemini rewords the sentence and is rejected if it adds or drops a number.
 
 A one-click **Realistic mode** applies the real 2026 EI cap ($729/week) and keeps pension income through a job loss. Both numbers are always on screen.
 

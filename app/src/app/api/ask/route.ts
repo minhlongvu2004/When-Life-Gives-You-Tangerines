@@ -1,8 +1,7 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { answer, ASK_SCHEMA, sanitizeQuestion, type Answer } from "@/lib/ask";
+import { answer, ASK_SCHEMA, sanitizeMode, sanitizeQuestion, sanitizeShock, type Answer } from "@/lib/ask";
 import { getCachedExplanation, getMetricsRow, getMetricsRowFromFile, saveExplanation } from "@/lib/db";
-import { sanitizeMode, sanitizeShock } from "@/lib/explain";
 import { geminiJson } from "@/lib/gemini";
 import { clientIp, rateLimited } from "@/lib/rateLimit";
 
