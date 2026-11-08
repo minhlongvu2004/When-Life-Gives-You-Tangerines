@@ -120,7 +120,7 @@ export function answerTemplate(q: QuestionId, m: Metrics, shock: Shock, mode: Mo
 
   if (q === "layoff") {
     if (!shock.jobLoss) return make("This shock isn't a layoff, so there's no layoff length to estimate.", all);
-    const r = c.nothing.runway;
+    const r = c.nothing.runway as number | null;
     const eiMonths = (eiWeeks * 7) / 30.44;
     const searchMonths = (AVG_SEARCH_WEEKS * 7) / 30.44;
     const tail =
