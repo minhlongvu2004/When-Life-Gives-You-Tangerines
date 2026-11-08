@@ -90,6 +90,7 @@ def main():
     m["fees"] = g.bank_fees.median()
     m["pension"] = g.pension_in.median()
     m["nonPensionI"] = g.non_pension_in.median()
+    m["lean"] = g.discretionary.quantile(0.25)  # leanest-month spending, drives the short-term cut
     m["months"] = g.size()
     m["first"] = g.month.first()
     m["last"] = g.month.last()
@@ -99,6 +100,7 @@ def main():
     m = m.join(acc.set_index("account_id"))
     m = m.join(dist.set_index("district_id")[["district_name", "region", "average_salary", "unemployment_rate_2023"]], on="district_id")
     m["loanStatus"] = loans_i.status.reindex(m.index)
+    m["unemp"] = m["unemployment_rate_2023"]
 
     # owner info
     owners = disp[disp.type == "owner"].merge(clients, on="client_id", how="left")
@@ -108,7 +110,7 @@ def main():
     n_users = disp.groupby("account_id").size()
 
     # ---- metrics.json: compact table used by the engine ----
-    cols = ["I", "F", "S", "B", "H", "P", "ins", "loanPay", "disc", "card", "cash", "xfer", "fees", "pension", "nonPensionI"]
+    cols = ["I", "F", "S", "B", "H", "P", "ins", "loanPay", "disc", "card", "cash", "xfer", "fees", "pension", "nonPensionI", "lean", "unemp"]
     metrics = {
         "columns": ["id"] + cols + ["region", "incomeCV", "months"],
         "rows": [[int(i)] + [clean(r[c]) for c in cols] + [r["region"], r2(r["incomeCV"]), int(r["months"])]

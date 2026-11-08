@@ -33,7 +33,7 @@ DROP MATERIALIZED VIEW IF EXISTS customer_metrics CASCADE;
 --
 -- Extra descriptors used by the app (same names as metrics.json):
 --   ins, loanPay, disc, card, cash, xfer, fees, pension, nonPensionI,
---   incomeCV, months, plus region and a few helpers for the findings.
+--   lean (25th percentile of discretionary), unemp, incomeCV, months, plus region and a few helpers for the findings.
 -- ---------------------------------------------------------------------
 CREATE MATERIALIZED VIEW customer_metrics AS
 WITH monthly AS (
@@ -83,6 +83,7 @@ agg AS (
         percentile_cont(0.5) WITHIN GROUP (ORDER BY bank_fees)                   AS fees,
         percentile_cont(0.5) WITHIN GROUP (ORDER BY pension_in)                  AS pension,
         percentile_cont(0.5) WITHIN GROUP (ORDER BY non_pension_in)              AS "nonPensionI",
+        percentile_cont(0.25) WITHIN GROUP (ORDER BY discretionary)              AS lean,
         count(*)                                                                 AS months,
         -- income volatility: sample std / mean. NULL when there is one month
         -- or the mean is 0 (pandas gives NaN in the same cases).
@@ -103,7 +104,8 @@ SELECT
     -- P: only a running loan (C = running OK, D = running in debt) counts.
     CASE WHEN l.status IN ('C', 'D') THEN l.monthly_payment ELSE 0 END           AS "P",
     agg.ins, agg."loanPay", agg.disc, agg.card, agg.cash, agg.xfer, agg.fees,
-    agg.pension, agg."nonPensionI",
+    agg.pension, agg."nonPensionI", agg.lean,
+    d.unemployment_rate_2023                                                     AS unemp,
     d.region,
     agg."incomeCV",
     agg.months,

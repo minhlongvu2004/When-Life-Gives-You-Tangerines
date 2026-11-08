@@ -37,7 +37,7 @@ const EI_MONTHLY_CAP = (729 * 52) / 12;
 
 const METRIC_COLUMNS = [
   "I", "F", "S", "B", "H", "P", "ins", "loanPay", "disc", "card", "cash",
-  "xfer", "fees", "pension", "nonPensionI",
+  "xfer", "fees", "pension", "nonPensionI", "lean", "unemp",
 ] as const;
 
 const r2 = (x: number | null) => (x === null ? null : Math.round(x * 100) / 100);

@@ -20,6 +20,8 @@ export interface Metrics {
   fees: number;
   pension: number;
   nonPensionI: number;
+  lean: number; // 25th-percentile month of flexible spending: what they have already lived on
+  unemp: number; // district unemployment rate 2023, %
   region: string;
   incomeCV: number | null;
   months: number;
