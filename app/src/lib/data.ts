@@ -87,20 +87,20 @@ let findingsP: Promise<Findings> | null = null;
 const detailCache = new Map<number, Promise<AccountDetail | null>>();
 
 export function loadMetrics() {
-  metricsP ??= fetch("/data/metrics.json")
+  metricsP ??= fetch("/api/metrics")
     .then((r) => r.json() as Promise<MetricsFile>)
     .then(decodeMetrics);
   return metricsP;
 }
 export function loadFindings() {
-  findingsP ??= fetch("/data/findings.json").then((r) => r.json() as Promise<Findings>);
+  findingsP ??= fetch("/api/findings").then((r) => r.json() as Promise<Findings>);
   return findingsP;
 }
 export function loadDetail(id: number) {
   if (!detailCache.has(id))
     detailCache.set(
       id,
-      fetch(`/data/accounts/${id}.json`).then((r) => (r.ok ? (r.json() as Promise<AccountDetail>) : null)),
+      fetch(`/api/customer/${id}`).then((r) => (r.ok ? (r.json() as Promise<AccountDetail>) : null)),
     );
   return detailCache.get(id)!;
 }

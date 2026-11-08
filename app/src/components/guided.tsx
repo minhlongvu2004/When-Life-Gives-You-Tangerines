@@ -550,11 +550,40 @@ export function StepPlan({ m, mode, shock, onRestart }: { m: Metrics; mode: Mode
   const when = useFast ? g.fastMonths : g.monthsToGoal;
   const progress = g.target > 0 ? Math.min(1, Math.max(0, g.current / g.target)) : 1;
 
+  // Words come from the server (Gemini, or a template). Every number in them is filled in
+  // by the server's rules engine. Until they arrive, the static subtitle stays.
+  const [expl, setExpl] = useState<{ headline: string; why: string; source: string; rulesVersion: string } | null>(null);
+  const explKey = JSON.stringify([m.id, eff, mode]);
+  useEffect(() => {
+    let alive = true;
+    setExpl(null);
+    fetch("/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: m.id, shock: eff, mode }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((x) => alive && x?.headline && setExpl({ headline: x.headline, why: x.why, source: x.source, rulesVersion: x.rulesVersion ?? "v1" }))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [explKey]);
+
   return (
     <div className="space-y-4">
       <div className="text-center">
         <h2 className="text-3xl font-semibold tracking-tight">Two plans, built from their own numbers.</h2>
-        <p className="mt-1 text-ink-2">One for the day it hits. One to be ready before it does.</p>
+        <p className="mx-auto mt-1 max-w-2xl text-ink-2">
+          {expl ? (
+            <>
+              <b className="font-semibold text-ink">{expl.headline}</b> {expl.why}
+            </>
+          ) : (
+            "One for the day it hits. One to be ready before it does."
+          )}
+        </p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -649,6 +678,11 @@ export function StepPlan({ m, mode, shock, onRestart }: { m: Metrics; mode: Mode
       </div>
 
       <div className="text-center">
+        {/* How the plan was made: numbers always come from the rules engine. */}
+        <p className="mb-1 text-xs text-muted">
+          Numbers: rules engine {expl?.rulesVersion ?? "v1"} · Words: {expl ? (expl.source === "gemini" ? "Gemini" : "template") : "…"} · Data: Tiger
+          Data
+        </p>
         <button onClick={onRestart} className="rounded-full px-3.5 py-2 text-sm font-medium text-ink-2 hover:text-ink">
           Try another customer →
         </button>
