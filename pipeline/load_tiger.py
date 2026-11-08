@@ -78,6 +78,22 @@ def csv_rows(path: str) -> int:
         return sum(1 for _ in csv.reader(f)) - 1  # minus header
 
 
+def run_sql_file(url: str, path: str) -> int:
+    """Run a .sql file one statement at a time, in autocommit mode.
+
+    Continuous aggregates cannot be created inside a transaction, so each
+    statement runs on its own. Comment lines are dropped first, then the file
+    is split on a semicolon at the end of a line.
+    """
+    text = "\n".join(l for l in open(path, encoding="utf-8").read().splitlines()
+                     if not l.lstrip().startswith("--"))
+    statements = [s.strip() for s in re.split(r";[ \t]*(?:\n|$)", text) if s.strip()]
+    with psycopg.connect(url, connect_timeout=20, autocommit=True) as conn:
+        for s in statements:
+            conn.execute(s)
+    return len(statements)
+
+
 def main() -> None:
     data = find_data_dir()
     print("data:", data)
@@ -125,6 +141,9 @@ def main() -> None:
     if not ok or not hyper:
         raise SystemExit("FAILED: row counts differ or hypertable missing.")
     print("OK: every table matches its CSV.")
+
+    n = run_sql_file(database_url(), os.path.join(ROOT, "pipeline", "sql", "metrics.sql"))
+    print(f"metrics.sql: ran {n} statements.")
 
 
 if __name__ == "__main__":
