@@ -1,5 +1,6 @@
 import "server-only";
 import { Pool } from "pg";
+import type { Metrics } from "./engine";
 
 /**
  * Tiger Data (Postgres) access. Server-only: importing this from a client
@@ -58,6 +59,51 @@ export async function getMetrics() {
     ]),
     eiMonthlyCap: EI_MONTHLY_CAP,
   };
+}
+
+/** One account's engine inputs, in the same shape as decodeMetrics() produces. null if unknown. */
+export async function getMetricsRow(id: number): Promise<Metrics | null> {
+  const cols = METRIC_COLUMNS.map((c) => `"${c}"`).join(", ");
+  const { rows } = await pool().query(
+    `SELECT account_id, ${cols}, region, "incomeCV", months::int AS months
+       FROM customer_metrics WHERE account_id = $1`,
+    [id],
+  );
+  const r = rows[0];
+  if (!r) return null;
+  const o: Record<string, unknown> = { id: r.account_id, region: r.region, incomeCV: r.incomeCV ?? null, months: r.months };
+  for (const c of METRIC_COLUMNS) o[c] = r[c] ?? 0;
+  return o as unknown as Metrics;
+}
+
+/* Saved explanations, so repeat plans don't spend Gemini credits. */
+
+let cacheTableReady: Promise<unknown> | null = null;
+function ensureCacheTable() {
+  cacheTableReady ??= pool().query(
+    `CREATE TABLE IF NOT EXISTS plan_explanations (
+       cache_key     text PRIMARY KEY,
+       rules_version text NOT NULL,
+       body          jsonb NOT NULL,
+       created_at    timestamptz NOT NULL DEFAULT now()
+     )`,
+  );
+  return cacheTableReady;
+}
+
+export async function getCachedExplanation(key: string): Promise<unknown | null> {
+  await ensureCacheTable();
+  const { rows } = await pool().query(`SELECT body FROM plan_explanations WHERE cache_key = $1`, [key]);
+  return rows[0]?.body ?? null;
+}
+
+export async function saveExplanation(key: string, rulesVersion: string, body: unknown): Promise<void> {
+  await ensureCacheTable();
+  await pool().query(
+    `INSERT INTO plan_explanations (cache_key, rules_version, body) VALUES ($1, $2, $3::jsonb)
+     ON CONFLICT (cache_key) DO NOTHING`,
+    [key, rulesVersion, JSON.stringify(body)],
+  );
 }
 
 /** Precomputed analytics (AUCs, scenario shares, featured picks). Loaded by pipeline/load_tiger.py. */
