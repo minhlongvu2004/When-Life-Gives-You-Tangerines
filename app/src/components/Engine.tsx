@@ -149,7 +149,7 @@ export function Engine() {
               all={all}
               onNext={() => setStep(2)}
             />}
-          {step === 2 && <StepPlan m={m} mode={mode} shock={shock} onRestart={close} />}
+          {step === 2 && <StepPlan m={m} mode={mode} shock={shock} start={start} now={now} />}
         </motion.div>
       </AnimatePresence>
     </div>

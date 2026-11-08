@@ -35,9 +35,10 @@ The app walks you through three steps: **1 Customer → 2 Shock → 3 Plan**. Sa
 2. Click **Hit them with a shock**. **Type the twist card** into the bar at the top and press Enter, or tap the matching scenario card.
    Read the headline aloud, for example *"They run out of money in month 3, 3.9 months short."*
 3. Point at the **math line** under the headline (savings ÷ (spending − income) = months): it's the judges' formula with this customer's numbers. Then **drag a slider** to show it recalculating live. For a layoff, click **With the real EI cap** to show the realistic number.
-4. Click **Make a plan**. Read the two big numbers:
-   - Left (*if it hits*): *"Runway goes from 2.1 to 3.9 months with these three moves."*
-   - Right (*get ready*): *"Save $2.0K a month and they're fully ready in 19 months."*
+4. Click **Plan**. Read the three cards left to right, they share one result line:
+   - **Do nothing**: *"2.1 months, 3.9 short."*
+   - **Short term**: *"Cut card and cash spending back to their own lean month, $13,833, and it's 3.4 months."*
+   - **Long term**: *"Auto-save $1,989 a month, ready in 19 months, and the same layoff then lasts 6.0 months."*
 5. Click the **×** on the customer pill to load the next one.
 
 ### Twist cheat sheet
@@ -71,8 +72,9 @@ The app walks you through three steps: **1 Customer → 2 Shock → 3 Plan**. Sa
 
 - **"Why do your numbers differ from ours?"** They don't in Judge mode: it's your definitions verbatim, verified on 36,000 cases. Realistic mode is labelled and shown next to it: EI is capped at $729/week (canada.ca, 2026), and pensions don't stop when a job does.
 - **"Why medians?"** Yours, and they're robust: one bonus month or one big purchase doesn't move the typical month.
+- **"How do you pick the cut?"** Lean month: what that customer already spent in their leanest months, capped at 50% (about what a typical customer's lean month looks like).
 - **"How do you pick the emergency-fund target?"** The larger of 6 × the monthly gap on EI (so they survive a full 6-month claim) and 3 × fixed costs. It's personal, not a generic "3–6 months".
-- **"What counts as flexible spending?"** Card spending, genuine cash withdrawals and unlabelled transfers out. Bills, insurance, loans and fees are must-pay. It's a heuristic: cash can hide rent, so we cut only 10%, then 25% in survival mode.
+- **"What counts as flexible spending?"** Card spending, genuine cash withdrawals and unlabelled transfers out. Bills, insurance, loans and fees are must-pay. It's a heuristic: cash can hide rent, so the cut is the customer's own lean month (their 25th-percentile month of flexible spending), kept between 10% and 50%.
 - **"Is the finding just pensioners?"** No. Toggle "Excluding pensioners" on the finding page: buffers still fall from 8.9 to 1.8 months as income rises.
 - **"Couldn't overdrafts predict default?"** They look perfect (every defaulter had one), but that's leakage: being in debt *is* the default. We use only months before each loan. Income volatility then still predicts default 6× (AUC 0.71).
 - **"Impact for Tangerine?"** Flag high earners with under 2 months of buffer and income volatility for a proactive savings nudge, before a layoff, not after.

@@ -3,16 +3,18 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, ChevronDown, ShieldCheck, SlidersHorizontal, Sparkles, X, XCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { backupPlan, formatRunway, goalPlan, NO_SHOCK, scenario, verdict, type Metrics, type Mode, type Shock } from "@/lib/engine";
-import { isShock, shockLabel } from "@/lib/shocks";
+import { formatRunway, NO_SHOCK, scenario, verdict, type Metrics, type Mode, type Shock } from "@/lib/engine";
+import { effectiveShock, planCards, type PlanCard } from "@/lib/planCards";
+import { isShock, shockLabel, ymLabel } from "@/lib/shocks";
 import { parseTwist } from "@/lib/twist";
 import type { MonthRow } from "@/lib/data";
-import type { YM } from "@/lib/whatif/scenarios";
+import { parseYM, type YM } from "@/lib/whatif/scenarios";
 import { BalanceChart, InOutChart } from "./charts";
 import { CustomShocks } from "./shock/CustomShocks";
 import { ShockControls } from "./shock/ShockFields";
 import { ShockImpact } from "./shock/ShockImpact";
 import { ShockLibrary } from "./shock/ShockLibrary";
+import { PlanCardView, ShockStrip } from "./PlanCards";
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -458,170 +460,40 @@ export function StepShock({
 
 /* ------------------------------------------------------------------ step 3 */
 
-export function StepPlan({ m, mode, shock, onRestart }: { m: Metrics; mode: Mode; shock: Shock; onRestart: () => void }) {
-  const has = isShock(shock);
-  const eff: Shock = has ? shock : { ...NO_SHOCK, jobLoss: true, incomePct: 0.55, durationMonths: 6 };
-  const steps = backupPlan(m, eff, mode);
-  const first = steps[0];
-  const last = steps[steps.length - 1];
-  const dur = has ? shock.durationMonths : 6;
-  const ok = last.runway === null || last.runway >= dur;
-  const g = goalPlan(m, mode, 0.5);
-  const useFast = g.fastMonths !== null && (g.monthsToGoal === null || g.monthsToGoal > 18) && g.fastMonths < (g.monthsToGoal ?? Infinity);
-  const save = useFast ? g.fastMonthly : g.monthly;
-  const when = useFast ? g.fastMonths : g.monthsToGoal;
-  const progress = g.target > 0 ? Math.min(1, Math.max(0, g.current / g.target)) : 1;
-
-  // Words come from the server (Gemini, or a template). Every number in them is filled in
-  // by the server's rules engine. Until they arrive, the static subtitle stays.
-  const [expl, setExpl] = useState<{ headline: string; why: string; source: string; rulesVersion: string } | null>(null);
-  const explKey = JSON.stringify([m.id, eff, mode]);
-  useEffect(() => {
-    let alive = true;
-    setExpl(null);
-    fetch("/api/plan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: m.id, shock: eff, mode }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((x) => alive && x?.headline && setExpl({ headline: x.headline, why: x.why, source: x.source, rulesVersion: x.rulesVersion ?? "v1" }))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [explKey]);
+export function StepPlan({
+  m,
+  mode,
+  shock,
+  start,
+  now,
+}: {
+  m: Metrics;
+  mode: Mode;
+  shock: Shock;
+  start: string | null;
+  now: YM;
+}) {
+  const eff = effectiveShock(shock);
+  const cards = planCards(m, eff, mode);
+  // "Hits today" unless the shock was set to start in a later month (the numbers don't change)
+  const s = start ? parseYM(start) : null;
+  const later = s && (s.y !== now.y || s.m !== now.m) ? `Hits ${ymLabel(s)}` : null;
+  const hit = (c: PlanCard): PlanCard => (later ? { ...c, timing: later } : c);
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto flex w-full max-w-[1132px] flex-col">
       <div className="text-center">
-        <h2 className="text-3xl font-semibold tracking-tight">Two plans, built from their own numbers.</h2>
-        <p className="mx-auto mt-1 max-w-2xl text-ink-2">
-          {expl ? (
-            <>
-              <b className="font-semibold text-ink">{expl.headline}</b> {expl.why}
-            </>
-          ) : (
-            "One for the day it hits. One to be ready before it does."
-          )}
-        </p>
+        <h2 className="text-[clamp(24px,2.6vw,30px)] font-bold tracking-[-0.03em]">
+          {eff.jobLoss ? "If they lose their job, how long does their money last?" : "If this hits, how long does their money last?"}
+        </h2>
+        <ShockStrip shock={eff} cards={cards} />
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        {/* backup */}
-        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-          <div className="text-sm font-medium text-accent-ink">If it hits{has ? ` · ${shockLabel(shock)}` : " · a layoff"}</div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="tnum text-5xl font-semibold tracking-tighter">{months(first.runway)}</span>
-            <ArrowRight className="size-6 self-center text-muted" aria-hidden />
-            <span className={`tnum text-5xl font-semibold tracking-tighter ${ok ? "text-good-text" : "text-critical-text"}`}>{months(last.runway)}</span>
-            <span className="text-ink-2">months</span>
-          </div>
-          <div
-            className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${ok ? "bg-good-soft text-good-text" : "bg-critical-soft text-critical-text"}`}
-          >
-            {ok ? <CheckCircle2 className="size-4" aria-hidden /> : <XCircle className="size-4" aria-hidden />}
-            {ok ? `Makes it through ${dur} months` : last.runway === 0 ? "Savings can't cover the bill" : `Still short of ${dur} months`}
-          </div>
-          <ol className="mt-4 space-y-2">
-            {eff.jobLoss && <PlanStep n={1} title="Apply for EI right away" detail="Within 4 weeks of the last day of work" />}
-            {steps.slice(1).map((s, i) => (
-              <PlanStep
-                key={s.label}
-                n={i + (eff.jobLoss ? 2 : 1)}
-                title={s.label}
-                detail={s.detail}
-                gain={s.gained === null ? "no shortfall" : s.gained > 0 ? `+${s.gained.toFixed(1)} mo` : undefined}
-              />
-            ))}
-          </ol>
-          {!ok && (
-            <p className="mt-4 text-sm text-ink-2">
-              {last.runway === 0
-                ? "Monthly cuts can't pay a bill due today. Spread the repair over a payment plan, and build the fund on the right."
-                : "Cuts alone aren't enough. The real fix is the fund on the right."}
-            </p>
-          )}
-        </div>
-
-        {/* goal */}
-        <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
-          <div className="text-sm font-medium text-accent-ink">Get ready · emergency fund</div>
-          {g.shortfall === 0 ? (
-            <>
-              <div className="mt-3 text-5xl font-semibold tracking-tighter text-good-text">Funded</div>
-              <p className="mt-2 text-ink-2">
-                Their {k(g.current)} already covers the {k(g.target)} goal. Keep it in a high-interest savings account.
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="tnum text-5xl font-semibold tracking-tighter">{save > 0 ? k(save) : "—"}</span>
-                <span className="text-ink-2">a month</span>
-              </div>
-              <p className="mt-1 text-ink-2">
-                {when !== null ? (
-                  <>
-                    → fully ready in <b className="text-ink">{when} months</b>
-                  </>
-                ) : (
-                  "First, stop the monthly shortfall."
-                )}
-              </p>
-              <div className="mt-5">
-                <div className="mb-1.5 flex justify-between text-xs text-ink-2">
-                  <span>{k(g.current)} saved</span>
-                  <span>Goal {k(g.target)}</span>
-                </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-accent-soft">
-                  <motion.div
-                    className="h-full rounded-full bg-accent"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress * 100}%` }}
-                    transition={{ duration: 0.8 }}
-                  />
-                </div>
-              </div>
-              <ul className="mt-4 space-y-1.5 text-sm text-ink-2">
-                <li>• Goal = {g.targetReason}.</li>
-                {g.surplus > 0 && (
-                  <li>
-                    • Save half of the {k(g.surplus)} monthly surplus{useFast && <> plus 10% of flexible spending ({k(g.fastMonthly - g.monthly)})</>}.
-                  </li>
-                )}
-                {g.cutNeeded > 0 && <li>• Trim flexible spending {Math.round(g.cutNeeded * 100)}% to stop the monthly shortfall first.</li>}
-                <li>• Automate it: transfer the day after payday.</li>
-              </ul>
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="text-center">
-        {/* How the plan was made: numbers always come from the rules engine. */}
-        <p className="mb-1 text-xs text-muted">
-          Numbers: rules engine {expl?.rulesVersion ?? "v1"} · Words: {expl ? (expl.source === "gemini" ? "Gemini" : "template") : "…"} · Data: Tiger
-          Data
-        </p>
-        <button onClick={onRestart} className="btn btn-outline rounded-full px-3.5 py-2 text-sm font-medium">
-          Try another customer →
-        </button>
+      <div className="mt-5 grid gap-[18px] md:grid-cols-3 md:grid-rows-[auto_auto_auto_auto] md:gap-y-0">
+        <PlanCardView kind="nothing" card={hit(cards.nothing)} durationMonths={cards.durationMonths} />
+        <PlanCardView kind="short" card={hit(cards.short)} durationMonths={cards.durationMonths} />
+        <PlanCardView kind="long" card={cards.long} durationMonths={cards.durationMonths} />
       </div>
     </div>
-  );
-}
-
-function PlanStep({ n, title, detail, gain }: { n: number; title: string; detail: string; gain?: string }) {
-  return (
-    <li className="flex items-center gap-3">
-      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-semibold">{n}</span>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium">{title}</div>
-        <div className="truncate text-xs text-muted">{detail}</div>
-      </div>
-      {gain && <span className="tnum shrink-0 rounded-full bg-good-soft px-2 py-0.5 text-xs font-semibold text-good-text">{gain}</span>}
-    </li>
   );
 }
