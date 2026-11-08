@@ -1,27 +1,21 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ArrowRight,
-  Briefcase,
-  CheckCircle2,
-  ChevronDown,
-  CloudLightning,
-  Receipt,
-  ShieldCheck,
-  Sparkles,
-  TrendingDown,
-  TrendingUp,
-  X,
-  XCircle,
-  type LucideIcon,
-} from "lucide-react";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { formatRunway, money, NO_SHOCK, pct, scenario, verdict, type Metrics, type Mode, type Shock } from "@/lib/engine";
+import { ArrowRight, CheckCircle2, ChevronDown, ShieldCheck, SlidersHorizontal, Sparkles, XCircle } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { backupPlan, formatRunway, NO_SHOCK, scenario, verdict, type Metrics, type Mode, type Shock } from "@/lib/engine";
+import { isShock, shockLabel } from "@/lib/shocks";
 import { parseTwist } from "@/lib/twist";
 import type { MonthRow } from "@/lib/data";
+import type { ProvKey } from "@/lib/provenance";
+import type { YM } from "@/lib/whatif/scenarios";
 import { BalanceChart, InOutChart } from "./charts";
-import { Slider, Toggle } from "./ui";
+import { ProvTip } from "./ProvTip";
+import { CustomShocks } from "./shock/CustomShocks";
+import { ShockControls } from "./shock/ShockFields";
+import { ImpactChart, ImpactTiles, impactStory, useProjection } from "./shock/ShockImpact";
+import { ShockLibrary } from "./shock/ShockLibrary";
+import { TabBar } from "./ui";
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -47,38 +41,7 @@ const TONE = {
   critical: { ring: "var(--critical)", text: "text-critical-text", soft: "bg-critical-soft", Icon: XCircle, word: "Under 3 months" },
 };
 
-export const PRESETS: { key: string; title: string; sub: string; Icon: LucideIcon; shock: Shock }[] = [
-  { key: "job", title: "Job loss", sub: "EI estimate: 55% of income for 6 months", Icon: Briefcase, shock: { ...NO_SHOCK, jobLoss: true, incomePct: 0.55, durationMonths: 6 } },
-  { key: "cut", title: "Pay cut or fewer hours", sub: "Income down 30% for 6 months", Icon: TrendingDown, shock: { ...NO_SHOCK, incomePct: 0.7, durationMonths: 6 } },
-  {
-    key: "costs",
-    title: "Higher bills",
-    sub: "Rent/bills +15% and $200 more a month for 12 months",
-    Icon: TrendingUp,
-    shock: { ...NO_SHOCK, billsPct: 0.15, extraMonthly: 200, durationMonths: 12 },
-  },
-  { key: "expense", title: "Surprise expense", sub: "One-time cost of 2 months of spending (like a car repair)", Icon: Receipt, shock: { ...NO_SHOCK, oneOffMult: 2, durationMonths: 6 } },
-  {
-    key: "storm",
-    title: "Job loss + higher bills",
-    sub: "EI estimate 55% and bills +15% for 6 months",
-    Icon: CloudLightning,
-    shock: { ...NO_SHOCK, jobLoss: true, incomePct: 0.55, billsPct: 0.15, durationMonths: 6 },
-  },
-];
-
-export function shockLabel(s: Shock): string {
-  const parts: string[] = [];
-  if (s.jobLoss) parts.push(`job loss (EI estimate ${pct(s.incomePct)})`);
-  else if (s.incomePct !== 1) parts.push(`income down ${pct(1 - s.incomePct)}`);
-  if (s.billsPct) parts.push(`rent/bills +${pct(s.billsPct)}`);
-  if (s.extraMonthly) parts.push(`+${money(s.extraMonthly)}/month other costs`);
-  if (s.oneOffMult) parts.push(`one-time cost: ${s.oneOffMult === 1 ? "1 month" : s.oneOffMult + " months"} of spending`);
-  if (s.oneOffAbs) parts.push(`one-time ${money(s.oneOffAbs)}`);
-  const out = parts.join(" + ");
-  return out ? out[0].toUpperCase() + out.slice(1) : "";
-}
-export const isShock = (s: Shock) => shockLabel(s) !== "";
+export { shockLabel };
 
 /* ------------------------------------------------------------------ primitives */
 
@@ -88,21 +51,23 @@ export function RunwayRing({
   size = 200,
   caption,
   label,
+  compact,
 }: {
   runway: number | null; // months; null = no shortfall (120+)
   size?: number;
   caption?: string;
   label?: string;
+  compact?: boolean;
 }) {
   const tone = toneOf(runway);
   const t = TONE[tone];
   const stroke = size < 160 ? 10 : 14;
-  const numCls = size < 160 ? "text-4xl" : size < 200 ? "text-5xl" : "text-6xl";
+  const numCls = size < 130 ? "text-3xl" : size < 160 ? "text-4xl" : size < 200 ? "text-5xl" : "text-6xl";
   const r = (size - stroke) / 2;
   const C = 2 * Math.PI * r;
   const frac = runway === null ? 1 : Math.min(Math.max(runway, 0), GOAL_MONTHS) / GOAL_MONTHS;
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex shrink-0 flex-col items-center" title={compact ? `Full circle = ${GOAL_MONTHS} months covered` : undefined}>
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--grid)" strokeWidth={stroke} />
@@ -130,15 +95,15 @@ export function RunwayRing({
           >
             {months(runway)}
           </motion.div>
-          <div className={`mt-0.5 max-w-[70%] leading-tight text-ink-2 ${size < 160 ? "text-xs" : "text-sm"}`}>
+          <div className={`mt-0.5 max-w-[72%] leading-tight text-ink-2 ${size < 130 ? "text-[10px]" : size < 160 ? "text-xs" : "text-sm"}`}>
             {label ?? (runway === null ? "no monthly shortfall" : "months your money lasts")}
           </div>
-          <div className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${t.soft} ${t.text}`}>
-            <t.Icon className="size-3.5" aria-hidden /> {caption ?? t.word}
+          <div className={`inline-flex items-center gap-1 rounded-full font-semibold ${size < 130 ? "mt-1 px-2 py-px text-[10px]" : "mt-2 px-2.5 py-0.5 text-xs"} ${t.soft} ${t.text}`}>
+            <t.Icon className={size < 130 ? "size-3" : "size-3.5"} aria-hidden /> {caption ?? t.word}
           </div>
         </div>
       </div>
-      <div className="mt-2 text-xs whitespace-nowrap text-muted">Full circle = {GOAL_MONTHS} months covered</div>
+      {!compact && <div className="mt-2 text-xs whitespace-nowrap text-muted">Full circle = {GOAL_MONTHS} months covered</div>}
     </div>
   );
 }
@@ -163,73 +128,26 @@ export function Disclosure({ label, children, icon }: { label: string; children:
   );
 }
 
-/** A pill that opens a right-hand side panel, so details never push the page down. */
-export function SheetButton({ label, icon, title, children, wide }: { label: string; icon?: ReactNode; title?: string; children: ReactNode; wide?: boolean }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-  return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/70 px-3.5 py-2 text-sm text-ink-2 transition-colors hover:border-accent hover:text-ink"
-      >
-        {icon}
-        {label}
-      </button>
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              className="fixed inset-0 z-50 bg-black/10"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}
-            />
-            <motion.aside
-              role="dialog"
-              aria-label={title ?? label}
-              className={`fixed top-0 right-0 z-50 flex h-full w-full flex-col border-l border-line bg-surface shadow-2xl ${wide ? "max-w-3xl" : "max-w-xl"}`}
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 32, stiffness: 320 }}
-            >
-              <div className="flex items-center justify-between border-b border-line px-6 py-4">
-                <h3 className="text-base font-semibold">{title ?? label}</h3>
-                <button onClick={() => setOpen(false)} className="grid size-8 place-items-center rounded-full hover:bg-surface-2" aria-label="Close">
-                  <X className="size-4" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-    </>
-  );
-}
+export { SheetButton } from "./Sheet";
 
-function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Kpi({ label, value, sub, prov }: { label: string; value: string; sub?: string; prov?: ProvKey }) {
   return (
     <div className="text-center">
-      <div className="text-xs font-medium tracking-wide text-muted uppercase">{label}</div>
+      <div className="flex items-center justify-center gap-1 text-xs font-medium tracking-wide text-muted uppercase">
+        {label}
+        {prov && <ProvTip k={prov} />}
+      </div>
       <div className="tnum mt-1 text-2xl font-semibold tracking-tight">{value}</div>
       {sub && <div className="text-xs text-muted">{sub}</div>}
     </div>
   );
 }
 
-function NextButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+function NextButton({ onClick, children, small }: { onClick: () => void; children: ReactNode; small?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className="group inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-page shadow-lg shadow-black/10 transition hover:-translate-y-0.5"
+      className={`btn btn-primary group gap-2 rounded-full text-sm ${small ? "px-4 py-1.5" : "px-6 py-3"}`}
     >
       {children}
       <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
@@ -239,7 +157,21 @@ function NextButton({ onClick, children }: { onClick: () => void; children: Reac
 
 /* ------------------------------------------------------------------ step 1 */
 
-export function StepCustomer({ m, rows, peers, mode, onNext }: { m: Metrics; rows: MonthRow[]; peers: Peers | null; mode: Mode; onNext: () => void }) {
+export function StepCustomer({
+  m,
+  rows,
+  peers,
+  mode,
+  onNext,
+  historyMissing,
+}: {
+  m: Metrics;
+  rows: MonthRow[];
+  peers: Peers | null;
+  mode: Mode;
+  onNext: () => void;
+  historyMissing?: boolean;
+}) {
   const base = scenario(m, NO_SHOCK, mode);
   const bufMonths = m.S > 0 ? m.B / m.S : 0;
   const surplus = m.I - m.S;
@@ -254,39 +186,53 @@ export function StepCustomer({ m, rows, peers, mode, onNext }: { m: Metrics; row
           : "Breaking even every month."
         : `Spending ${k(base.gap)} more than comes in, every month.`;
   const story =
-    base.runway === null
-      ? `Their account balance would cover ${bufMonths.toFixed(1)} months of normal spending if money stopped coming in.`
-      : `At this pace their ${k(m.B)} account balance lasts ${months(base.runway)} months.`;
+    m.S <= 0
+      ? "This account records no regular spending, so months of savings can't be calculated."
+      : base.runway === null
+        ? `Their account balance would cover ${bufMonths.toFixed(1)} months of normal spending if money stopped coming in.`
+        : `At this pace their ${k(m.B)} account balance lasts ${months(base.runway)} months.`;
+  const first = rows[0]?.month;
+  const last = rows[rows.length - 1]?.month;
 
   return (
     <div className="space-y-4">
       <div className="grid items-center gap-8 md:grid-cols-[auto_1fr]">
         <div className="mx-auto">
-          <RunwayRing
-            runway={Math.round(bufMonths * 10) / 10}
-            size={180}
-            label="months of spending saved"
-            caption={bufMonths >= 6 ? "Well cushioned" : bufMonths >= 3 ? "Thin cushion" : "Very thin cushion"}
-          />
+          {m.S > 0 ? (
+            <RunwayRing
+              runway={Math.round(bufMonths * 10) / 10}
+              size={180}
+              label="months of spending saved"
+              caption={bufMonths >= 6 ? "Well cushioned" : bufMonths >= 3 ? "Thin cushion" : "Very thin cushion"}
+            />
+          ) : (
+            <div className="grid size-[180px] place-items-center rounded-full border-[14px] border-grid text-center text-sm text-ink-2">Unable to calculate</div>
+          )}
         </div>
         <div>
-          <div className="text-sm font-medium text-accent-ink">Today, with no changes</div>
+          <div className="flex items-center gap-1.5 text-sm font-medium text-accent-ink">
+            Latest data (to Dec 2025), no changes <ProvTip k="bufferMonths" />
+          </div>
           <h2 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">{headline}</h2>
           <p className="mt-3 text-lg text-ink-2">{story}</p>
-          {peers && (
-            <p className="mt-2 text-ink-2">
-              People with similar income keep <b className="text-ink">{peers.fifthMedianBufferMonths.toFixed(1)} months</b> of spending saved.
+          {peers && m.S > 0 && (
+            <p className="mt-2 flex items-center gap-1.5 text-ink-2">
+              <span>
+                People with similar income keep <b className="text-ink">{peers.fifthMedianBufferMonths.toFixed(1)} months</b> of spending saved ({peers.fifth} fifth of income).
+              </span>
+              <ProvTip k="peers" />
             </p>
           )}
           <div className="mt-5 grid grid-cols-3 gap-4 rounded-2xl border border-line bg-surface/70 px-4 py-4 sm:grid-cols-5">
-            <Kpi label="Money in" value={k(m.I)} sub="per month" />
-            <Kpi label="Fixed costs" value={k(m.F)} sub={`bills ${k(m.H)} · loan ${k(m.P)}`} />
-            <Kpi label="Money out" value={k(m.S)} sub="per month" />
-            <Kpi label="Balance" value={k(m.B)} sub="account, 6-mo avg" />
+            <Kpi label="Money in" value={k(m.I)} sub="typical month" prov="I" />
+            <Kpi label="Fixed costs" value={k(m.F)} sub={`bills ${k(m.H)} · loan ${m.P > 0 ? k(m.P) : "none"}`} prov="F" />
+            <Kpi label="Money out" value={k(m.S)} sub="typical month" prov="S" />
+            <Kpi label="Balance" value={k(m.B)} sub="account, 6-mo avg" prov="B" />
             <Kpi
               label="Money lasts"
               value={base.runway === null ? "120+" : `${months(base.runway)} mo`}
               sub={base.runway === null ? "no monthly shortfall" : "at this pace"}
+              prov="runway"
             />
           </div>
           <div className="mt-5">
@@ -295,10 +241,18 @@ export function StepCustomer({ m, rows, peers, mode, onNext }: { m: Metrics; row
         </div>
       </div>
       {rows.length > 0 ? (
-        <div className="grid gap-5 rounded-3xl border border-line bg-surface p-5 shadow-sm md:grid-cols-2">
-          <InOutChart rows={rows} />
-          <BalanceChart rows={rows} buffer={m.B} />
+        <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
+          <div className="grid gap-5 md:grid-cols-2">
+            <InOutChart rows={rows} />
+            <BalanceChart rows={rows} buffer={m.B} />
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted">
+            Recorded history, {first} to {last} ({rows.length} months), monthly_summary.csv. Historical data, not live balances.
+            <ProvTip k="history" />
+          </div>
         </div>
+      ) : historyMissing ? (
+        <div className="grid h-56 place-items-center rounded-3xl border border-dashed border-line bg-surface text-sm text-ink-2">Monthly history unavailable for this account.</div>
       ) : (
         <div className="h-56 animate-pulse rounded-3xl bg-surface" />
       )}
@@ -314,6 +268,9 @@ export function StepShock({
   setMode,
   shock,
   setShock,
+  start,
+  setStart,
+  now,
   all,
   onNext,
 }: {
@@ -322,16 +279,23 @@ export function StepShock({
   setMode: (m: Mode) => void;
   shock: Shock;
   setShock: (s: Shock) => void;
+  start: string | null;
+  setStart: (s: string | null) => void;
+  now: YM;
   all: Metrics[];
   onNext: () => void;
 }) {
   const [text, setText] = useState("");
   const [heard, setHeard] = useState<string[]>([]);
+  const [left, setLeft] = useState<"presets" | "custom" | "adjust">("presets");
+  const [right, setRight] = useState<"chart" | "plan" | "explain">("chart");
   const base = scenario(m, NO_SHOCK, mode);
   const sc = scenario(m, shock, mode);
   const other = scenario(m, shock, mode === "judge" ? "realistic" : "judge");
   const v = verdict(sc, shock.durationMonths);
   const has = isShock(shock);
+  const steps = useMemo(() => (has ? backupPlan(m, shock, mode) : []), [m, shock, mode, has]);
+  const { p } = useProjection(m, shock, mode, start);
 
   const share = useMemo(() => {
     if (!has) return 0;
@@ -345,7 +309,7 @@ export function StepShock({
 
   const read = () => {
     const p = parseTwist(text);
-    setHeard(p.understood.length ? p.understood : ["Couldn't read that. Pick an example below or use the sliders."]);
+    setHeard(p.understood.length ? p.understood : ["Couldn't read that. Pick an example or set the values yourself."]);
     if (p.understood.length) setShock(p.shock);
   };
 
@@ -357,100 +321,135 @@ export function StepShock({
         ? `The account covers all ${shock.durationMonths} months.`
         : `The account runs out in month ${Math.max(1, Math.ceil(sc.runway ?? 0))} of ${shock.durationMonths}.`;
   const sub = !has
-    ? "Describe it, pick an example, or move the sliders."
+    ? "Describe it, pick an example, or set the values yourself."
     : v.wipedOut
       ? `That's ${k(v.shortToday)} more than the account holds.`
       : v.survives
         ? `About ${k(Math.max(0, v.spare))} left in the account at the end.`
         : `${v.monthsShort.toFixed(1)} months short. About ${k(v.moneyNeeded)} more in the account would cover it.`;
 
+  const pick = (s: Shock) => {
+    setShock(s);
+    setHeard([]);
+  };
+
   return (
-    <div className="space-y-3">
-      {/* twist bar */}
-      <div>
-        <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface p-2 pl-4 shadow-sm focus-within:border-accent">
-          <Sparkles className="size-5 shrink-0 text-accent" aria-hidden />
+    <div data-fill className="grid gap-3 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(360px,5fr)_minmax(0,8fr)] lg:grid-rows-[minmax(0,1fr)]">
+      {/* ---------------- left: scenario controls */}
+      <section className="ws-panel p-3 lg:min-h-0" aria-label="Scenario controls">
+        <div className="flex items-center gap-2 rounded-xl border border-glass-border bg-glass p-1 pl-3 focus-within:border-accent">
+          <Sparkles className="size-4 shrink-0 text-accent" aria-hidden />
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && read()}
-            placeholder="Describe it in your own words, e.g. “I lose my job (EI at 55%) and rent goes up $200 a month”"
-            className="min-w-0 flex-1 bg-transparent py-2 text-base outline-none placeholder:text-muted"
+            placeholder="Describe it, e.g. “I lose my job (EI at 55%) and rent goes up $200 a month”"
+            className="min-w-0 flex-1 bg-transparent py-1.5 text-sm outline-none placeholder:text-muted"
             aria-label="Describe a what-if"
           />
-          <button onClick={read} className="rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90">
+          <button onClick={read} className="btn btn-primary rounded-lg px-3.5 py-1.5 text-xs">
             Apply
           </button>
         </div>
         <AnimatePresence>
           {heard.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-2 flex flex-wrap gap-1.5 pl-1">
+            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-1.5 flex flex-wrap gap-1" aria-live="polite">
               {heard.map((h) => (
-                <span key={h} className="rounded-full bg-accent-soft px-2.5 py-1 text-xs text-accent-ink">
+                <span key={h} className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] text-accent-ink">
                   {h}
                 </span>
               ))}
             </motion.div>
           )}
         </AnimatePresence>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {PRESETS.map((p) => {
-            const active = JSON.stringify(p.shock) === JSON.stringify(shock);
-            return (
-              <button
-                key={p.key}
-                onClick={() => {
-                  setShock(p.shock);
-                  setHeard([]);
-                }}
-                title={p.sub}
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all ${
-                  active ? "border-accent bg-accent-soft text-accent-ink" : "border-line bg-surface/70 text-ink-2 hover:border-accent/60 hover:text-ink"
-                }`}
-              >
-                <p.Icon className="size-4" aria-hidden />
-                {p.title}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* sliders (left) drive the result (right) */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
-          <div className="mb-3 text-sm font-semibold">Set up the what-if</div>
-          <ShockSliders m={m} shock={shock} setShock={setShock} income={sc.income} />
+        <div className="mt-2.5 flex items-center gap-2">
+          <TabBar
+            idBase="shock-left"
+            label="Shock controls"
+            value={left}
+            onChange={setLeft}
+            className="flex-1"
+            tabs={[
+              { value: "presets", label: "Presets" },
+              { value: "custom", label: "My shocks" },
+              {
+                value: "adjust",
+                label: (
+                  <span className="inline-flex items-center gap-1">
+                    <SlidersHorizontal className="size-3" aria-hidden /> Adjust
+                  </span>
+                ),
+              },
+            ]}
+          />
+          {has && (
+            <button onClick={() => setShock(NO_SHOCK)} className="btn btn-outline shrink-0 rounded-full px-2.5 py-1 text-[11px]">
+              Clear
+            </button>
+          )}
         </div>
 
-        <div
-          className={`flex flex-col justify-center rounded-3xl border bg-surface p-6 shadow-sm ${has ? "border-accent/40 ring-4 ring-accent-soft" : "border-line"}`}
-        >
-          <div className="flex items-center gap-6">
-            <RunwayRing runway={sc.runway} size={170} caption={has ? (v.survives ? "Covers it" : v.wipedOut ? "Can't cover" : "Runs short") : undefined} />
-            <div className="min-w-0">
+        <div id="shock-left-panel" role="tabpanel" aria-labelledby={`shock-left-tab-${left}`} className="ws-scroll mt-2 flex-1 pr-1">
+          {left === "presets" && <ShockLibrary bare m={m} shock={shock} onPick={pick} />}
+          {left === "custom" && (
+            <CustomShocks
+              bare
+              m={m}
+              mode={mode}
+              shock={shock}
+              start={start}
+              now={now}
+              onRun={(s, st) => {
+                pick(s);
+                setStart(st);
+              }}
+            />
+          )}
+          {left === "adjust" && (
+            <div>
+              <p className="mb-3 text-xs text-ink-2">
+                Every value here is a hypothetical assumption. Dollar effects use this account&apos;s own medians. Tap ? for what a field means.
+              </p>
+              <ShockControls m={m} shock={shock} setShock={setShock} income={sc.income} />
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ---------------- right: simulation results */}
+      <section className="flex min-h-0 min-w-0 flex-col gap-3" aria-label="Simulation results" aria-live="polite">
+        <div className={`ws-panel shrink-0 p-3 transition-shadow ${has ? "border-accent/40 ring-2 ring-accent-soft" : ""}`}>
+          <div className="flex flex-wrap items-center gap-4 sm:flex-nowrap">
+            <RunwayRing runway={sc.runway} size={118} compact caption={has ? (v.survives ? "Covers it" : v.wipedOut ? "Can't cover" : "Runs short") : undefined} />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 text-xs font-medium text-accent-ink">
+                {has ? (
+                  <>
+                    <span className="truncate">{shockLabel(shock)}</span>
+                    <span className="text-muted">· was {months(base.runway)} mo</span>
+                  </>
+                ) : (
+                  "No shock applied yet"
+                )}
+                <ProvTip k="runway" />
+              </div>
+              <h2 className="mt-0.5 text-xl leading-tight font-semibold tracking-tight xl:text-2xl">{headline}</h2>
+              <p className="mt-0.5 text-sm text-ink-2">{sub}</p>
               {has && (
-                <div className="text-sm font-medium text-accent-ink">
-                  {shockLabel(shock)} · was {months(base.runway)} months
+                <div className="mt-1.5 rounded-lg bg-surface-2 px-2.5 py-1 font-mono text-xs break-words text-ink-2" title="Months = balance left after one-time costs ÷ (monthly spending − monthly money in)">
+                  {sc.bufferLeft <= 0
+                    ? `${k(m.B)} balance − ${k(sc.oneOff)} one-time costs ≤ 0  →  0 months`
+                    : sc.gap <= 0
+                      ? `money in ${k(sc.income)} ≥ spending ${k(sc.spending)}  →  no monthly shortfall`
+                      : `${k(sc.bufferLeft)} left ÷ ${k(sc.gap)} monthly shortfall  =  ${months(sc.runway)} months`}
                 </div>
               )}
-              <h2 className="mt-1 text-3xl leading-tight font-semibold tracking-tight">{headline}</h2>
-              <p className="mt-2 text-ink-2">{sub}</p>
             </div>
-          </div>
-          {has && (
-            <>
-              <div className="mt-5 rounded-xl bg-surface-2 px-4 py-2.5 font-mono text-sm text-ink-2" title="Months = balance left after one-time costs ÷ (monthly spending − monthly money in)">
-                {sc.bufferLeft <= 0
-                  ? `${k(m.B)} balance − ${k(sc.oneOff)} one-time costs ≤ 0  →  0 months`
-                  : sc.gap <= 0
-                    ? `money in ${k(sc.income)} ≥ spending ${k(sc.spending)}  →  no monthly shortfall`
-                    : `${k(sc.bufferLeft)} left ÷ ${k(sc.gap)} monthly shortfall  =  ${months(sc.runway)} months`}
-              </div>
-              <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-2">
-                <span>
-                  <b className="text-ink">{Math.round(share * 100)}%</b> of the {all.length.toLocaleString()} customers in this data wouldn&apos;t be covered for{" "}
-                  {shock.durationMonths} months
+            {has && (
+              <div className="flex shrink-0 flex-col items-end gap-1.5 text-right text-xs text-ink-2">
+                <span className="max-w-[13rem]">
+                  <b className="tnum text-ink">{Math.round(share * 100)}%</b> of the {all.length.toLocaleString("en-CA")} accounts in this data wouldn&apos;t be covered for {shock.durationMonths} months
                 </span>
                 {(shock.jobLoss || mode === "realistic") && (
                   <button
@@ -461,110 +460,85 @@ export function StepShock({
                     {mode === "judge" ? "With the EI weekly maximum" : "With the simple formula (no EI maximum)"}: <b className="tnum text-ink">{months(other.runway)} months</b>
                   </button>
                 )}
+                <NextButton onClick={onNext} small>
+                  Recovery Plan
+                </NextButton>
               </div>
-              <div className="mt-5">
-                <NextButton onClick={onNext}>Recovery Plan</NextButton>
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+
+        <ImpactTiles m={m} shock={shock} mode={mode} start={start} />
+
+        <div className="ws-panel min-h-[320px] flex-1 p-3 lg:min-h-0">
+          <TabBar
+            idBase="shock-right"
+            label="Result details"
+            value={right}
+            onChange={setRight}
+            className="w-fit self-start"
+            tabs={[
+              { value: "chart", label: "Financial impact" },
+              { value: "plan", label: "Recommendations" },
+              { value: "explain", label: "Explanation" },
+            ]}
+          />
+          <div id="shock-right-panel" role="tabpanel" aria-labelledby={`shock-right-tab-${right}`} className="mt-2 flex min-h-0 flex-1 flex-col">
+            {!has ? (
+              <div className="grid flex-1 place-items-center rounded-xl border border-dashed border-line p-6 text-center text-sm text-ink-2">
+                <div>
+                  <p className="font-semibold text-ink">Pick a preset, type a twist card, or adjust values on the left.</p>
+                  <p className="mt-1 text-xs text-muted">The tiles above show account #{m.id} with no changes: its own medians from monthly_summary.csv and loans.csv.</p>
+                </div>
+              </div>
+            ) : right === "chart" ? (
+              <ImpactChart m={m} shock={shock} mode={mode} start={start} setStart={setStart} />
+            ) : right === "plan" ? (
+              <div className="ws-scroll flex-1 pr-1">
+                <p className="mb-2 text-xs text-ink-2">Backup moves for this shock, in order. Each adds runway using this account&apos;s own flexible spending and loan payment.</p>
+                <ol className="space-y-2">
+                  {shock.jobLoss && <PlanStep n={1} title="Apply for EI right away" detail="Within 4 weeks of the last day of work" />}
+                  {steps.slice(1).map((s, i) => (
+                    <PlanStep
+                      key={s.label}
+                      n={i + (shock.jobLoss ? 2 : 1)}
+                      title={s.label}
+                      detail={s.detail}
+                      gain={s.gained === null ? "no shortfall" : s.gained > 0 ? `+${s.gained.toFixed(1)} mo` : undefined}
+                    />
+                  ))}
+                  {steps.length <= 1 && !shock.jobLoss && <li className="text-sm text-ink-2">This account has no flexible spending or running loan to adjust, so there are no backup moves to test.</li>}
+                </ol>
+                <p className="mt-3 text-xs text-muted">
+                  Runway with every move: <b className="tnum text-ink">{months(steps[steps.length - 1]?.runway ?? sc.runway)} months</b>. The full goal plan is on the Plan step.
+                </p>
+              </div>
+            ) : (
+              <div className="ws-scroll flex-1 pr-1 text-sm leading-relaxed text-ink-2">
+                {impactStory(m, shock, sc, p, mode).map((t) => (
+                  <p key={t} className="mb-2">
+                    {t}
+                  </p>
+                ))}
+                <p className="text-xs text-muted">A hypothetical projection from past account data and the assumptions on the left, not a forecast or a record of real events.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-/** Round up to a tidy slider maximum (at least one step). */
-const niceMax = (x: number, step: number) => Math.max(step, Math.ceil(x / step) * step);
-
-function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock; setShock: (s: Shock) => void; income: number }) {
-  const set = (p: Partial<Shock>) => setShock({ ...shock, ...p });
-  // Income is entered in dollars per month (usual income × rate) so any exact amount can be typed.
-  // Customers with no recorded income fall back to a percentage.
-  const dollars = m.I >= 1;
-  const entered = shock.incomePct * m.I;
-  const lostPct = 1 - shock.incomePct;
-  const lostNote = lostPct > 0.0005 ? `−${pct(lostPct)}${dollars ? ` (−${money(lostPct * m.I)})` : ""}` : "no change";
-  const countsAs = Math.abs(income - entered) > 1 ? ` Counts as ${money(income)}/mo after the EI weekly maximum and pension income.` : "";
+function PlanStep({ n, title, detail, gain }: { n: number; title: string; detail: string; gain?: string }) {
   return (
-    <div className="grid grid-cols-1 gap-y-2">
-      <div className="flex items-center gap-3">
-        <Toggle
-          checked={shock.jobLoss}
-          onChange={(on) => set(on ? { jobLoss: true, incomePct: shock.incomePct === 1 ? 0.55 : shock.incomePct } : { jobLoss: false, incomePct: 1 })}
-          label="Job loss (estimated EI)"
-        />
-        {shock.jobLoss && <span className="text-xs text-muted">Estimate only · EI max $729/week</span>}
+    <li className="flex items-center gap-3">
+      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-surface-2 text-xs font-semibold">{n}</span>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium">{title}</div>
+        <div className="truncate text-xs text-muted">{detail}</div>
       </div>
-      <Slider
-        label={shock.jobLoss ? "Income during job loss" : "Income still coming in"}
-        value={dollars ? entered : shock.incomePct}
-        min={0}
-        max={dollars ? Math.ceil(m.I) : 1}
-        step={dollars ? 1 : 0.001}
-        onChange={(x) => set({ incomePct: dollars ? x / m.I : x })}
-        field={dollars ? { prefix: "$", suffix: "/mo" } : { scale: 100, decimals: 1, suffix: "%" }}
-        display={lostNote}
-        displayTitle={`${lostNote}.${countsAs}`}
-      />
-      {m.H >= 1 && (
-        <Slider
-          label="Rent/bills go up by"
-          value={shock.billsPct * m.H}
-          min={0}
-          max={Math.max(500, niceMax(m.H, 100))}
-          step={1}
-          curve={2}
-          onChange={(x) => set({ billsPct: x / m.H })}
-          field={{ prefix: "+$", suffix: "/mo" }}
-          openEnded
-          hardMax={1_000_000}
-          display={`+${pct(shock.billsPct)} of usual bills`}
-        />
-      )}
-      <Slider
-        label="New monthly cost"
-        value={shock.extraMonthly}
-        min={0}
-        max={Math.max(500, niceMax(0.25 * m.S, 250))}
-        step={1}
-        onChange={(x) => set({ extraMonthly: x })}
-        field={{ prefix: "+$", suffix: "/mo" }}
-        openEnded
-        hardMax={1_000_000}
-      />
-      <Slider
-        label="One-time cost (× spending)"
-        value={shock.oneOffMult}
-        min={0}
-        max={3}
-        step={0.01}
-        onChange={(x) => set({ oneOffMult: x })}
-        field={{ decimals: 2, suffix: "×" }}
-        openEnded
-        hardMax={36}
-        display={`= ${money(shock.oneOffMult * m.S)}`}
-      />
-      <Slider
-        label="Plus a one-time amount"
-        value={shock.oneOffAbs}
-        min={0}
-        max={Math.max(5000, niceMax(m.S, 1000))}
-        step={1}
-        onChange={(x) => set({ oneOffAbs: x })}
-        field={{ prefix: "$" }}
-        openEnded
-        hardMax={10_000_000}
-      />
-      <Slider
-        label="How long this lasts"
-        value={shock.durationMonths}
-        min={1}
-        max={24}
-        step={1}
-        onChange={(x) => set({ durationMonths: x })}
-        field={{ suffix: "months" }}
-      />
-    </div>
+      {gain && <span className="tnum shrink-0 rounded-full bg-good-soft px-2 py-0.5 text-xs font-semibold text-good-text">{gain}</span>}
+    </li>
   );
 }
-

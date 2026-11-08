@@ -42,7 +42,8 @@ export interface RecoveryRow {
 export interface RecoveryResult {
   rows: RecoveryRow[];
   runsOutMonth: number | null; // first month the account can't cover the month (0 = one-time costs alone)
-  peakGap: number;
+  peakGap: number; // the most that was ever unpaid in the whole projection
+  gapAtDisruptionEnd: number; // what was unpaid when the disruption ended (not the long-run peak)
   shortfallEndsMonth: number | null; // first month after the last month with a shortfall (0 = never had one, null = never ends)
   caughtUpMonth: number | null; // unpaid amount cleared (null = nothing unpaid, or not cleared in the horizon)
   backToStarterMonth: number | null; // back above 1 month of essentials for good (0 = never fell below, null = not reached)
@@ -100,6 +101,7 @@ export function simulateRecovery(i: RecoveryInputs): RecoveryResult {
     rows,
     runsOutMonth,
     peakGap,
+    gapAtDisruptionEnd: rows[Math.min(i.durationMonths, horizon)].gap,
     shortfallEndsMonth: lastShortfall === 0 ? 0 : lastShortfall >= horizon ? null : lastShortfall + 1,
     caughtUpMonth: peakGap <= 0 || lastOwing >= horizon ? null : lastOwing + 1,
     backToStarterMonth: recoveredAfter(rows, i.starter),

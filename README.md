@@ -37,8 +37,18 @@ npm install
 npm run build       # once, ahead of time (~30 s)
 npm run serve       # serves the build at http://localhost:3000 (use this for live judging)
 # or: npm run dev   # hot-reload dev server
-npm test            # golden test + twist-card parser tests
+npm test            # golden test, twist-card parser, real-account data tests
+
+# 3. (optional) prove every committed number matches the raw CSVs (all 4,500 accounts)
+python pipeline/verify_csv.py path/to/data
 ```
+
+## Data integrity
+
+- Every historical figure comes from the nine supplied CSVs (2020-01 to 2025-12). The data has no customer names, so accounts are only ever shown as `Account #<account_id>`.
+- Each major metric has an "i" tooltip naming its source file, columns, formula, period and whether it is observed, derived, model-defined or hypothetical (`app/src/lib/provenance.ts`).
+- Simulations (Shock Engine, What If, Climb the Ranks, Tangerine Pulse) start from the Dec 2025 snapshot and are labelled hypothetical. No financial value is random.
+- The Resilience Score is an application-defined index, not an official Tangerine or credit-bureau score. Rank and Tangerine Pulse use the same score.
 
 Deep link to a customer: `http://localhost:3000/?id=52783`
 

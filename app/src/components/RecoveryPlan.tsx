@@ -21,7 +21,8 @@ import {
   type RecoveryResult,
 } from "@/lib/recovery";
 import { compact } from "./charts";
-import { Disclosure, isShock, shockLabel } from "./guided";
+import { isShock, shockLabel } from "@/lib/shocks";
+import { Disclosure } from "./guided";
 import { LegendKey, Segmented } from "./ui";
 
 const axis = { stroke: "var(--axis)", tick: { fill: "var(--muted)", fontSize: 11 }, tickLine: false } as const;
@@ -302,7 +303,7 @@ function Answer({ plan, res, D, target }: { plan: PlanDef; res: RecoveryResult; 
       ? `With ${planName(plan)}, the account covers all ${D} months.`
       : res.runsOutMonth === 0
         ? "The one-time costs alone use up the account."
-        : `With ${planName(plan)}, the account runs short in month ${res.runsOutMonth} of ${D}${res.peakGap > 0 ? `, leaving about ${M(res.peakGap)} of bills and spending uncovered` : ""}.`;
+        : `With ${planName(plan)}, the account runs short in month ${res.runsOutMonth} of ${D}${res.gapAtDisruptionEnd > 0 ? `, with about ${M(res.gapAtDisruptionEnd)} of bills and spending uncovered by the end of month ${D}` : ""}.`;
   const second =
     res.targetMonth === null
       ? ` At these settings it doesn't reach the ${target}-month target within 8 years.`
@@ -434,7 +435,7 @@ function PlanComparison({ rows, selected, onSelect, D, targetLabel, unit }: { ro
               <th className="py-2 pr-3 font-medium">Plan</th>
               <th className="py-2 pr-3 font-medium">Change needed each month</th>
               <th className="py-2 pr-3 font-medium">Account during the disruption</th>
-              <th className="py-2 pr-3 font-medium">Most left unpaid</th>
+              <th className="py-2 pr-3 font-medium">Uncovered by the end of the disruption</th>
               <th className="py-2 pr-3 font-medium">Back above 1 month of {unit}</th>
               <th className="py-2 font-medium">Reaches {targetLabel}</th>
             </tr>
@@ -458,7 +459,7 @@ function PlanComparison({ rows, selected, onSelect, D, targetLabel, unit }: { ro
                 </td>
                 <td className="py-3 pr-3">{bar(r.effort.total / maxEffort, effortText(r), "var(--series-2)")}</td>
                 <td className="py-3 pr-3">{runs(r.res)}</td>
-                <td className="tnum py-3 pr-3">{r.res.peakGap > 0 ? M(r.res.peakGap) : "$0"}</td>
+                <td className="tnum py-3 pr-3">{r.res.gapAtDisruptionEnd > 0 ? M(r.res.gapAtDisruptionEnd) : "$0"}</td>
                 <td className="py-3 pr-3">{when(r.res.backToStarterMonth, "Never fell below")}</td>
                 <td className="py-3">{bar((r.res.targetMonth ?? maxTime) / maxTime, r.res.targetMonth === null ? "Not within 8 years" : r.res.targetMonth === 0 ? "Already there" : durationWords(r.res.targetMonth), "var(--series-1)")}</td>
               </tr>
@@ -487,8 +488,8 @@ function PlanComparison({ rows, selected, onSelect, D, targetLabel, unit }: { ro
               <dd className="tnum text-right">{effortText(r)}</dd>
               <dt className="text-ink-2">Account</dt>
               <dd className="text-right">{runs(r.res)}</dd>
-              <dt className="text-ink-2">Most left unpaid</dt>
-              <dd className="tnum text-right">{r.res.peakGap > 0 ? M(r.res.peakGap) : "$0"}</dd>
+              <dt className="text-ink-2">Uncovered by the end</dt>
+              <dd className="tnum text-right">{r.res.gapAtDisruptionEnd > 0 ? M(r.res.gapAtDisruptionEnd) : "$0"}</dd>
               <dt className="text-ink-2">Back above 1 month</dt>
               <dd className="text-right">{when(r.res.backToStarterMonth, "Never fell below")}</dd>
               <dt className="text-ink-2">Reaches target</dt>
@@ -566,8 +567,8 @@ function FundsChart({
     `It starts at ${M(startFunds)}. ` +
     (current.runsOutMonth === null
       ? `With ${sel.key === "none" ? "no changes" : `plan ${sel.key}`}, it never reaches $0. `
-      : `With plan ${sel.key}, it reaches $0 in month ${current.runsOutMonth}${current.peakGap > 0 ? ` and about ${M(current.peakGap)} of bills and spending goes uncovered` : ""}. `) +
-    `Without changes, it reaches $0 in ${none.runsOutMonth === null ? "no month" : `month ${none.runsOutMonth}`}${none.peakGap > 0 ? ` and up to ${M(none.peakGap)} goes uncovered` : ""}. ` +
+      : `With plan ${sel.key}, it reaches $0 in month ${current.runsOutMonth}${current.gapAtDisruptionEnd > 0 ? ` and about ${M(current.gapAtDisruptionEnd)} of bills and spending is uncovered by the end of month ${D}` : ""}. `) +
+    `Without changes, it reaches $0 in ${none.runsOutMonth === null ? "no month" : `month ${none.runsOutMonth}`}${none.gapAtDisruptionEnd > 0 ? ` and about ${M(none.gapAtDisruptionEnd)} is uncovered by the end of month ${D}` : ""}. ` +
     `Target: ${M(target)} (${targetMonths} months of ${unit}), ${current.targetMonth === null ? "not reached within 8 years" : current.targetMonth === 0 ? "already met" : `reached in month ${current.targetMonth} with the plan`}.`;
 
   const tableMonths = useMemo(() => {
@@ -729,7 +730,11 @@ function Milestones({ res, D, starter, targetAmount, targetMonths, unit }: { res
     items.push({
       label: "Unpaid amount cleared",
       when: when(res.caughtUpMonth, "Nothing unpaid"),
-      basis: `Up to ${M(res.peakGap)} went uncovered. ${Math.round(REBUILD_SHARE * 100)}% of each month's leftover clears it first.`,
+      basis:
+        (res.gapAtDisruptionEnd > 0
+          ? `${M(res.gapAtDisruptionEnd)} was uncovered when the disruption ended.`
+          : "Bills went uncovered later, because normal income doesn't cover normal spending.") +
+        ` ${Math.round(REBUILD_SHARE * 100)}% of each month's leftover clears it first.`,
     });
   items.push({
     label: `Back above 1 month of ${unit} (${M(starter)})`,

@@ -131,6 +131,20 @@ describe("simulateRecovery: rules that must always hold", () => {
   });
 });
 
+describe("simulateRecovery: what is uncovered when the disruption ends", () => {
+  it("is reported separately from the long-run peak", () => {
+    expect(simulateRecovery(base).gapAtDisruptionEnd).toBeCloseTo(3960);
+    // if normal income never covers normal spending, the unpaid amount keeps growing for years afterwards,
+    // but what was uncovered at the end of the disruption doesn't change
+    const permanent = simulateRecovery({ ...base, incomeAfter: 4000, spendingAfter: 4300 });
+    expect(permanent.gapAtDisruptionEnd).toBeCloseTo(3960);
+    expect(permanent.peakGap).toBeGreaterThan(20000);
+  });
+  it("is zero when the account covers the whole disruption", () => {
+    expect(simulateRecovery(planC).gapAtDisruptionEnd).toBe(0);
+  });
+});
+
 describe("simulateRecovery: edge cases", () => {
   it("if normal income doesn't cover normal spending, nothing is ever rebuilt", () => {
     const r = simulateRecovery({ ...base, incomeAfter: 4000, spendingAfter: 4300 });

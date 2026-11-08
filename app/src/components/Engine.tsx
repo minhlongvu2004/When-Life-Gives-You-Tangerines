@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadClientMap, loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
 import { parseId, resolveId, type ClientRole, type Resolved } from "@/lib/ids";
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
+import { dataAsOf } from "@/lib/whatif/scenarios";
 import { StepCustomer, StepShock, type Peers } from "./guided";
 import { StepPlan } from "./RecoveryPlan";
 
@@ -22,6 +23,8 @@ export function Engine() {
   const [step, setStep] = useState(0);
   const [mode, setMode] = useState<Mode>("judge");
   const [shock, setShock] = useState<Shock>(NO_SHOCK);
+  const [start, setStart] = useState<string | null>(null); // YYYY-MM the shock starts, null = the month after the data ends
+  const now = useMemo(() => dataAsOf(), []);
   const [detail, setDetail] = useState<AccountDetail | null | undefined>(undefined);
 
   const all = useMemo(() => (metrics ? [...metrics.values()] : []), [metrics]);
@@ -58,7 +61,9 @@ export function Engine() {
   useEffect(() => {
     if (id === null) return;
     let alive = true;
-    loadDetail(id).then((d) => alive && setDetail(d));
+    loadDetail(id)
+      .then((d) => alive && setDetail(d))
+      .catch(() => alive && setDetail(null));
     return () => {
       alive = false;
     };
@@ -91,17 +96,18 @@ export function Engine() {
       <Landing ready={!!metrics && !!clients} featured={findings?.featured ?? []} onOpen={open} resolve={resolve} all={all} />
     );
 
+  // owner's gender and age (clients.csv via dispositions.csv), branch region (accounts.csv → districts.csv). No names exist in the data.
   const who = detail?.owner
-    ? `${via?.role === "authorized user" ? "Account owner: " : ""}${detail.owner.gender === "F" ? "Woman" : detail.owner.gender === "M" ? "Man" : "Customer"}${detail.owner.age ? `, ${detail.owner.age}` : ""} · ${detail.region}`
-    : "";
+    ? `owner ${detail.owner.gender === "F" ? "female" : detail.owner.gender === "M" ? "male" : "gender n/a"}${detail.owner.age ? `, age ${detail.owner.age} in 2025` : ""} · ${detail.region}`
+    : (m.region ?? "");
 
   return (
-    <div>
+    <div className="flex flex-col lg:h-full lg:min-h-0">
       {/* customer pill + stepper */}
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 rounded-full border border-line bg-surface py-1.5 pr-1.5 pl-4 shadow-sm">
+      <div className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pr-1 pl-4 shadow-sm">
           <span className="text-sm">
-            <span className="tnum font-semibold">#{m.id}</span>
+            <span className="tnum font-semibold">Account #{m.id}</span>
             {who && <span className="hidden text-ink-2 sm:inline"> · {who}</span>}
             {via && (
               <span className="hidden text-muted md:inline">
@@ -123,7 +129,8 @@ export function Engine() {
             <button
               key={s}
               onClick={() => setStep(i)}
-              className={`relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors sm:gap-2 sm:px-4 sm:text-sm ${step === i ? "text-page" : "text-ink-2 hover:text-ink"}`}
+              aria-current={step === i ? "step" : undefined}
+              className={`relative flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors sm:gap-2 sm:px-4 sm:text-sm ${step === i ? "text-page" : "text-ink-2 hover:text-ink"}`}
             >
               {step === i && (
                 <motion.span
@@ -146,10 +153,21 @@ export function Engine() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col justify-center pb-2"
+          className={`flex flex-col justify-center ${step === 1 ? "lg:min-h-0 lg:flex-1" : "pb-2"}`}
         >
-          {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} />}
-          {step === 1 && <StepShock m={m} mode={mode} setMode={setMode} shock={shock} setShock={setShock} all={all} onNext={() => setStep(2)} />}
+          {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} historyMissing={detail === null} />}
+          {step === 1 && <StepShock
+              m={m}
+              mode={mode}
+              setMode={setMode}
+              shock={shock}
+              setShock={setShock}
+              start={start}
+              setStart={setStart}
+              now={now}
+              all={all}
+              onNext={() => setStep(2)}
+            />}
           {step === 2 && <StepPlan m={m} mode={mode} shock={shock} rows={rows} onRestart={close} />}
         </motion.div>
       </AnimatePresence>
@@ -174,9 +192,15 @@ function Landing({
   const [err, setErr] = useState("");
   const ref = useRef<HTMLInputElement>(null);
   const go = (raw: string) => {
-    const r = resolve(parseId(raw));
+    const text = raw.trim();
+    const digits = text.replace(/\D/g, "");
+    if (/[A-Za-z]/.test(text) || digits === "" || digits.length > 9) {
+      setErr("IDs are numbers only, like 52783 (account) or 6856613 (client).");
+      return;
+    }
+    const r = resolve(parseId(text));
     if (!r) {
-      setErr("No customer with that ID. Enter an account ID or a client ID from the dataset, or try an example below.");
+      setErr(`No account or client ${text} in accounts.csv or clients.csv. Try one of the examples below.`);
       return;
     }
     onOpen(r);
@@ -185,7 +209,7 @@ function Landing({
     <div className="flex flex-col items-center justify-center py-6 text-center">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-2xl">
         <div className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs font-medium text-ink-2">
-          <span className="size-1.5 rounded-full bg-accent" /> 4,500 real bank customers · 1 million transactions
+          <span className="size-1.5 rounded-full bg-accent" /> 4,500 anonymized bank accounts · 1,056,320 transactions · 2020–2025
         </div>
         <h1 className="mt-6 text-5xl font-semibold tracking-tighter sm:text-7xl">
           Will they <span className="text-accent">make it?</span>
@@ -216,7 +240,7 @@ function Landing({
           />
           <button
             disabled={!ready}
-            className="flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="btn btn-primary rounded-xl px-5 py-2.5"
           >
             Go <ArrowRight className="size-4" aria-hidden />
           </button>
@@ -227,14 +251,14 @@ function Landing({
             <button
               key={f.id}
               onClick={() => onOpen({ account: f.id })}
-              className="rounded-full border border-line bg-surface/70 px-3.5 py-1.5 text-ink-2 hover:border-accent hover:text-ink"
+              className="btn btn-secondary rounded-full px-3.5 py-1.5"
             >
               {f.label}
             </button>
           ))}
           <button
             onClick={() => all.length && onOpen({ account: all[Math.floor(Math.random() * all.length)].id })}
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted hover:text-ink"
+            className="btn btn-outline rounded-full px-3 py-1.5"
           >
             <Shuffle className="size-3.5" aria-hidden /> Surprise me
           </button>

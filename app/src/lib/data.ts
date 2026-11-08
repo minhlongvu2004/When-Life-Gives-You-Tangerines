@@ -88,10 +88,34 @@ let findingsP: Promise<Findings> | null = null;
 let clientsP: Promise<ClientMap> | null = null;
 const detailCache = new Map<number, Promise<AccountDetail | null>>();
 
+/** The API (Tiger Data) first. If it is down or not configured, the identical JSON committed in public/data. */
+let apiDown = false; // once the API fails (e.g. no database configured), use the static copies for the session
+async function fetchJson<T>(api: string, fallback: string): Promise<T | null> {
+  if (!apiDown)
+    try {
+      const r = await fetch(api);
+      if (r.ok) return (await r.json()) as T;
+      if (r.status === 404) return null;
+      if (r.status >= 500) apiDown = true;
+    } catch {
+      apiDown = true; // network error: use the static copy
+    }
+  const r = await fetch(fallback);
+  return r.ok ? ((await r.json()) as T) : null;
+}
+
+function required<T>(x: T | null, what: string): T {
+  if (x === null) throw new Error(`Could not load ${what}`);
+  return x;
+}
+
 export function loadMetrics() {
-  metricsP ??= fetch("/data/metrics.json")
-    .then((r) => r.json() as Promise<MetricsFile>)
-    .then(decodeMetrics);
+  metricsP ??= fetchJson<MetricsFile>("/api/metrics", "/data/metrics.json")
+    .then((f) => decodeMetrics(required(f, "metrics")))
+    .catch((e) => {
+      metricsP = null;
+      throw e;
+    });
   return metricsP;
 }
 /** client_id → the account that person belongs to. Falls back to an empty map so account IDs still work. */
@@ -103,15 +127,16 @@ export function loadClientMap() {
   return clientsP;
 }
 export function loadFindings() {
-  findingsP ??= fetch("/data/findings.json").then((r) => r.json() as Promise<Findings>);
+  findingsP ??= fetchJson<Findings>("/api/findings", "/data/findings.json")
+    .then((f) => required(f, "findings"))
+    .catch((e) => {
+      findingsP = null;
+      throw e;
+    });
   return findingsP;
 }
 export function loadDetail(id: number) {
-  if (!detailCache.has(id))
-    detailCache.set(
-      id,
-      fetch(`/data/accounts/${id}.json`).then((r) => (r.ok ? (r.json() as Promise<AccountDetail>) : null)),
-    );
+  if (!detailCache.has(id)) detailCache.set(id, fetchJson<AccountDetail>(`/api/customer/${id}`, `/data/accounts/${id}.json`));
   return detailCache.get(id)!;
 }
 
