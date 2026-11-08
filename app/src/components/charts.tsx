@@ -1,8 +1,9 @@
 "use client";
 
-import { Area, AreaChart, CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, ComposedChart, Line, LineChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { MonthRow } from "@/lib/data";
 import { money } from "@/lib/engine";
+import type { Projection } from "@/lib/shocks";
 import { LegendKey } from "./ui";
 
 export const compact = (v: number) => {
@@ -217,6 +218,123 @@ export function DepletionChart({
         {hasShock
           ? `Shaded = shock period (${duration} months). After it ends, the usual pattern resumes and backup-plan cuts stop.`
           : "Apply a shock to see how fast the buffer drains."}
+      </div>
+    </div>
+  );
+}
+
+const shortMonth = (label: string) => {
+  const [mon, y] = label.split(" ");
+  return y ? `${mon} ${y.slice(2)}` : label;
+};
+
+/** Duration-aware savings projection: shock months shaded, shock end marked, zero line, run-out point. */
+export function ShockProjectionChart({ p, animate = true, fill }: { p: Projection; animate?: boolean; fill?: boolean }) {
+  const data = p.points;
+  const H = p.horizon;
+  const end = Math.min(p.duration, H);
+  const ticks = data.filter((d) => d.t === 0 || d.t % (H > 24 ? 6 : 3) === 0 || d.t === end).map((d) => d.t);
+  // the gradient spans the shaded area's own box (balance down to zero), so split it where zero falls
+  const bHi = Math.max(0, ...data.map((d) => d.balance));
+  const bLo = Math.min(0, ...data.map((d) => d.balance));
+  const zeroAt = bHi === bLo ? 1 : bHi / (bHi - bLo);
+  return (
+    <div className={fill ? "flex h-full min-h-0 flex-col" : ""}>
+      <div className="mb-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <LegendKey color="var(--series-2)" label="With this shock" />
+        <LegendKey color="var(--series-1)" label="No shock" dashed />
+        <span className="inline-flex items-center gap-1.5 text-xs text-ink-2">
+          <span className="h-2.5 w-4 rounded-sm bg-accent/15" aria-hidden /> Shock period
+        </span>
+      </div>
+      <div className={fill ? "min-h-[180px] flex-1" : "h-64 sm:h-72"}>
+        <ResponsiveContainer>
+          <ComposedChart data={data} margin={{ top: 24, right: 14, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id="projFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--series-2)" stopOpacity={0.28} />
+                <stop offset={`${zeroAt * 100}%`} stopColor="var(--series-2)" stopOpacity={0.04} />
+                <stop offset={`${zeroAt * 100}%`} stopColor="var(--critical)" stopOpacity={0.1} />
+                <stop offset="100%" stopColor="var(--critical)" stopOpacity={0.28} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="var(--grid)" />
+            <ReferenceArea x1={0} x2={end} fill="var(--accent)" fillOpacity={0.07} stroke="none" ifOverflow="extendDomain" />
+            <XAxis
+              dataKey="t"
+              type="number"
+              domain={[0, H]}
+              ticks={ticks}
+              tickFormatter={(t: number) => (t === 0 ? "Start" : shortMonth(data[t]?.label ?? ""))}
+              {...axis}
+            />
+            <YAxis tickFormatter={compact} {...axis} axisLine={false} width={56} domain={["auto", "auto"]} />
+            <ReferenceLine
+              y={0}
+              ifOverflow="extendDomain"
+              stroke="var(--critical)"
+              strokeWidth={1.5}
+              label={{ value: "Savings gone", position: "insideBottomLeft", fill: "var(--critical-text)", fontSize: 11 }}
+            />
+            {p.duration < H && (
+              <ReferenceLine
+                x={end}
+                stroke="var(--accent)"
+                strokeDasharray="4 4"
+                label={{ value: `Shock ends · ${shortMonth(data[end].label)}`, position: "top", fill: "var(--ink-2)", fontSize: 11 }}
+              />
+            )}
+            <Tooltip
+              cursor={{ stroke: "var(--axis)" }}
+              content={({ active, payload }) => {
+                const d = active && payload?.length ? (payload[0]?.payload as Projection["points"][number]) : null;
+                if (!d) return null;
+                return (
+                  <TipBox
+                    title={d.t === 0 ? `${d.label} (after one-off costs)` : `${d.label} · ${d.phase === "shock" ? `shock month ${d.t}` : "after the shock"}`}
+                    rows={[
+                      { color: "var(--series-2)", label: "With this shock", value: money(d.balance) },
+                      { color: "var(--series-1)", label: "No shock", value: money(d.baseline) },
+                      { label: "Difference", value: money(d.balance - d.baseline) },
+                    ]}
+                  />
+                );
+              }}
+            />
+            <Line
+              type="linear"
+              dataKey="baseline"
+              stroke="var(--series-1)"
+              strokeWidth={1.75}
+              strokeDasharray="5 4"
+              dot={false}
+              isAnimationActive={animate}
+              animationDuration={500}
+            />
+            <Area
+              type="linear"
+              dataKey="balance"
+              stroke="var(--series-2)"
+              strokeWidth={2.5}
+              fill="url(#projFill)"
+              baseValue={0}
+              isAnimationActive={animate}
+              animationDuration={500}
+              activeDot={{ r: 4.5, strokeWidth: 2, stroke: "var(--surface)" }}
+            />
+            {p.exhaustedAt !== null && p.exhaustedAt <= H && (
+              <ReferenceDot
+                x={p.exhaustedAt}
+                y={0}
+                r={5.5}
+                fill="var(--critical)"
+                stroke="var(--surface)"
+                strokeWidth={2}
+                label={{ value: "Runs out", position: "top", fill: "var(--critical-text)", fontSize: 11, fontWeight: 600 }}
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

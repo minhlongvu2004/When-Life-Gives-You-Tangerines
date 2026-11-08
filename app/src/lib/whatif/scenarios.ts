@@ -89,6 +89,14 @@ export interface YM {
   m: number; // 1..12
 }
 export const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/**
+ * The last month in the datasets (monthly_summary.csv and transactions.csv end in 2025-12).
+ * Every projection starts here: the starting balances ARE the Dec 2025 snapshot, so counting
+ * from today's calendar month would silently skip the months in between (and, for example,
+ * treat loans still running at the end of 2025 as already paid off).
+ */
+export const DATA_AS_OF: YM = { y: 2025, m: 12 };
+export const dataAsOf = (): YM => ({ ...DATA_AS_OF });
 export function nowYM(d = new Date()): YM {
   return { y: d.getFullYear(), m: d.getMonth() + 1 };
 }

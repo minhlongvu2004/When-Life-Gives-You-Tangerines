@@ -74,7 +74,7 @@ export function FutureMap({
         <svg
           key={replay}
           viewBox={`0 0 ${W} ${H}`}
-          className="wf-grid-bg block h-auto w-full min-w-[640px] rounded-2xl"
+          className="wf-grid-bg block h-auto max-h-full w-full min-w-[480px] rounded-2xl"
           role="img"
           aria-label={`Branching map: ${title}. If it goes well, savings reach ${cad(branches[0].s.balance)} by ${monthName(now, h)}. If it goes badly, ${cad(
             branches[1].s.balance,
@@ -107,7 +107,7 @@ export function FutureMap({
             <g key={t}>
               <line x1={x(t)} x2={x(t)} y1={Y.well + 22} y2={Y.bad - 22} stroke="var(--grid)" strokeDasharray="2 6" />
               <text x={x(t)} y={H / 2 + 4} textAnchor="middle" fontSize="12" fill="var(--muted)">
-                {t === 0 ? "Today" : monthName(now, t, true)}
+                {t === 0 ? `Start (${monthName(now, 0, true)})` : monthName(now, t, true)}
               </text>
             </g>
           ))}
@@ -204,7 +204,7 @@ export function FutureMap({
       </div>
 
       {/* milestone detail */}
-      <div className="mt-3 min-h-[64px]">
+      <div className="mt-1 min-h-[52px]">
         <AnimatePresence mode="wait">
           {selected && sel ? (
             <motion.div
@@ -212,7 +212,7 @@ export function FutureMap({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className={`wf-card ${FUTURE[sel.which].card} flex items-start gap-3 px-4 py-3`}
+              className={`wf-card ${FUTURE[sel.which].card} flex items-start gap-3 px-3 py-2 text-sm`}
             >
               <FutureDot which={sel.which} />
               <div className="min-w-0">
@@ -226,7 +226,7 @@ export function FutureMap({
               </div>
             </motion.div>
           ) : (
-            <motion.div key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 py-2 text-xs text-muted">
+            <motion.div key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 py-1 text-[11px] text-muted">
               <span className="flex items-center gap-1.5">
                 <MousePointerClick className="size-4" aria-hidden /> Click a milestone to see what happens
               </span>

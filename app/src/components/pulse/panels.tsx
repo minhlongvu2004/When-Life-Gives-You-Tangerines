@@ -28,6 +28,8 @@ import {
 import { useMemo, useState, type ReactNode } from "react";
 import { BAND, bandOf, MILESTONES, NO_PULSE_CHANGES, surplusOf, type PulseChanges, type PulseHistory, type PulseProjection } from "@/lib/pulse";
 import { CATEGORIES, CATEGORY_META, leverToReach, loanMonthsLeft, money, NO_CHANGES, project, type CategoryKey, type RankData, type RankRow } from "@/lib/rank";
+import type { ProvKey } from "@/lib/provenance";
+import { ProvTip } from "../ProvTip";
 import { AnimatedNumber, Segmented } from "../ui";
 import { NumberField } from "../whatif/inputs";
 import { TangerineFallback } from "./TangerineFallback";
@@ -61,37 +63,37 @@ export function AccountPulseSearch({
 }) {
   const [v, setV] = useState("");
   return (
-    <div className={`pl-glass mx-auto max-w-2xl text-center ${compact ? "p-3" : "p-6"}`}>
+    <div className={compact ? "" : "pl-glass mx-auto max-w-2xl p-6 text-center"}>
       {!compact && <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">Discover Your Tangerine Pulse</h2>}
       <form
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit(v);
         }}
-        className={`mx-auto flex max-w-lg flex-wrap items-center gap-2 rounded-2xl border border-line bg-surface-2/80 p-2 pl-4 focus-within:border-accent sm:flex-nowrap ${compact ? "" : "mt-4"}`}
+        className={`mx-auto flex max-w-lg items-center gap-2 border border-line bg-surface-2/80 focus-within:border-accent ${compact ? "rounded-xl p-1 pl-3" : "mt-4 flex-wrap rounded-2xl p-2 pl-4 sm:flex-nowrap"}`}
       >
-        <Search className="size-5 shrink-0 text-muted" aria-hidden />
+        <Search className="size-4 shrink-0 text-muted" aria-hidden />
         <input
           inputMode="numeric"
           value={v}
           onChange={(e) => setV(e.target.value.replace(/[^\d]/g, ""))}
-          placeholder={ready ? "Account ID, e.g. 20134" : "Loading account data…"}
-          className="tnum min-w-0 flex-1 bg-transparent py-2 text-lg outline-none placeholder:text-muted"
+          placeholder={ready ? (compact ? "Another account ID" : "Account ID, e.g. 20134") : "Loading account data…"}
+          className={`tnum min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted ${compact ? "py-1 text-sm" : "py-2 text-lg"}`}
           aria-label="Account ID"
           aria-invalid={!!error}
           aria-describedby={error ? "pulse-err" : undefined}
         />
         <button
           disabled={!ready || busy}
-          className="wf-cta flex w-full shrink-0 items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 font-semibold whitespace-nowrap text-white disabled:opacity-50 sm:w-auto"
+          className={`wf-cta flex shrink-0 items-center justify-center gap-1.5 font-semibold whitespace-nowrap text-white disabled:opacity-50 ${compact ? "rounded-lg px-3 py-1.5 text-xs" : "w-full rounded-xl px-4 py-2.5 sm:w-auto"}`}
         >
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Sparkles className="size-4" aria-hidden />}
-          Bring My Tangerine to Life
+          {compact ? "Load" : "Bring My Tangerine to Life"}
         </button>
       </form>
       <AnimatePresence>
         {error && (
-          <motion.p id="pulse-err" role="alert" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 text-sm text-critical-text">
+          <motion.p id="pulse-err" role="alert" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-2 text-xs text-critical-text">
             {error}
           </motion.p>
         )}
@@ -107,7 +109,7 @@ export function AccountPulseSearch({
                 setV(String(x.id));
                 onSubmit(String(x.id));
               }}
-              className="rounded-full border border-line bg-surface-2/70 px-3 py-1.5 text-ink-2 hover:border-accent hover:text-ink"
+              className="btn btn-secondary rounded-full px-3 py-1.5"
             >
               {x.label}
             </button>
@@ -134,7 +136,7 @@ export function ResilienceScoreDisplay({ score, original, showing }: { score: nu
     <div className="text-center">
       <div className="text-[11px] font-semibold tracking-[0.2em] text-muted uppercase">{showing === "original" ? "Original resilience" : "Resilience score"}</div>
       <div className="tnum flex items-baseline justify-center font-semibold tracking-tighter" style={{ textShadow: "0 0 30px rgba(255,128,0,.45)" }}>
-        <span className="text-5xl sm:text-7xl">
+        <span className="text-5xl xl:text-6xl">
           <AnimatedNumber value={score} format={(v) => v.toFixed(1)} />
         </span>
         <span className="ml-1 text-xl text-muted sm:text-2xl">/100</span>
@@ -193,6 +195,7 @@ export interface Metric {
   sub: string;
   delta: number; // weighted points gained (+) or lost (−) under the hypothetical
   orig: string | null; // original value, when the projection differs
+  prov?: ProvKey;
 }
 
 export function buildMetrics(row: RankRow, p: PulseProjection): Metric[] {
@@ -205,37 +208,41 @@ export function buildMetrics(row: RankRow, p: PulseProjection): Metric[] {
     {
       key: "buffer",
       Icon: PiggyBank,
-      title: "Savings Buffer",
+      title: "Buffer",
       value: cov(p.scored.coverage),
       sub: p.inputs.B >= 0 ? `${money(p.inputs.B)} saved vs ${money(p.inputs.S)}/mo spending` : `Overdrawn by ${money(-p.inputs.B)} at ${money(p.inputs.S)}/mo spending`,
       delta: d.buffer,
+      prov: "B",
       orig: changed("buffer") || Math.abs(p.inputs.B - row.B) > 1 ? cov(p.base.coverage) : null,
     },
     {
       key: "cashflow",
       Icon: Waves,
-      title: "Monthly Cash Flow",
+      title: "Cash flow",
       value: flow(p.inputs.I, p.inputs.S),
       sub: `${money(p.inputs.I)} in · ${money(p.inputs.S)} out`,
       delta: d.cashflow,
+      prov: "surplus",
       orig: Math.abs(p.inputs.I - row.I) > 0.5 || Math.abs(p.inputs.S - row.S) > 0.5 ? flow(row.I, row.S) : null,
     },
     {
       key: "stability",
       Icon: Gauge,
-      title: "Income Stability",
+      title: "Stability",
       value: `${p.scored.stability.toFixed(0)}/100`,
       sub: `Money in varies ${Math.round(row.cv * 100)}% month to month`,
       delta: d.stability,
+      prov: "score",
       orig: null,
     },
     {
       key: "debt",
       Icon: Landmark,
-      title: "Debt Burden",
+      title: "Debt",
       value: dti(p.scored.dti, p.inputs.obl),
       sub: p.inputs.obl > 0 ? `${money(p.inputs.obl)}/mo loan + leasing` : row.status === "A" ? "Loan on record fully repaid" : "None on record at this bank",
       delta: d.debt,
+      prov: "P",
       orig: changed("debt") ? dti(p.base.dti, row.obl) : null,
     },
   ];
@@ -247,14 +254,15 @@ export function FinancialMetricCard({ m, side }: { m: Metric; side?: "left" | "r
   return (
     <div className="relative">
       {side && <div className={`absolute top-1/2 hidden w-8 lg:block ${side === "left" ? "-right-8 pl-connector" : "-left-8 pl-connector-r"}`} aria-hidden />}
-      <div className="pl-glass p-3.5">
-        <div className="flex items-center gap-2">
-          <span className="grid size-7 place-items-center rounded-lg bg-accent-soft text-accent-ink">
-            <m.Icon className="size-4" aria-hidden />
+      <div className="pl-glass h-full p-2.5">
+        <div className="flex items-center gap-1.5">
+          <span className="grid size-6 place-items-center rounded-md bg-accent-soft text-accent-ink">
+            <m.Icon className="size-3.5" aria-hidden />
           </span>
-          <span className="text-xs font-medium text-ink-2">{m.title}</span>
+          <span className="truncate text-[11px] font-medium text-ink-2">{m.title}</span>
+          {m.prov && <ProvTip k={m.prov} />}
         </div>
-        <div className="tnum mt-2 text-lg leading-tight font-semibold">{m.value}</div>
+        <div className="tnum mt-1 text-base leading-tight font-semibold">{m.value}</div>
         {m.orig && <div className="tnum text-[11px] text-muted line-through decoration-muted/60">{m.orig}</div>}
         <div className="mt-0.5 text-[11px] leading-snug text-muted">{m.sub}</div>
         {(up || down) && (
@@ -293,19 +301,19 @@ export function GrowYourJuiceSimulator({
   const dirty = changes.save || changes.spend || changes.income || changes.extraLoan;
   const why = explainChanges(row, p, changes);
   return (
-    <section className="wf-card p-5 sm:p-6" aria-labelledby="grow-h">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 id="grow-h" className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-            <Droplets className="size-5 text-accent-ink" aria-hidden /> Grow Your Juice
+    <section aria-labelledby="grow-h">
+      <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 id="grow-h" className="flex items-center gap-1.5 text-sm font-semibold">
+            <Droplets className="size-4 text-accent-ink" aria-hidden /> Grow Your Juice <ProvTip k="rankProjection" />
           </h2>
-          <p className="mt-1 text-sm text-ink-2">Explore how financial improvements could strengthen your resilience.</p>
+          <p className="text-[11px] text-ink-2">Hypothetical changes, re-scored with the Rank page&apos;s rules.</p>
         </div>
-        <button onClick={onReset} disabled={!dirty} className="flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-2 hover:border-accent hover:text-ink disabled:opacity-40">
-          <RotateCcw className="size-4" aria-hidden /> Reset My Tangerine
+        <button onClick={onReset} disabled={!dirty} className="btn btn-secondary shrink-0 rounded-full px-2.5 py-1 text-xs">
+          <RotateCcw className="size-3.5" aria-hidden /> Reset
         </button>
       </div>
-      <div className="space-y-5">
+      <div className="space-y-3">
         {surplus > 0 ? (
           <Lever Icon={PiggyBank} note={`Comes out of what you already have left over each month (${money(surplus)}), so it can’t exceed it.`}>
             <NumberField f={{ key: "pl-save", label: "Extra monthly savings", kind: "monthly", min: 0, max: r50(surplus), step: 25 }} value={changes.save} onChange={(v) => set("save", Math.min(v, Math.round(surplus)))} />
@@ -348,13 +356,13 @@ export function GrowYourJuiceSimulator({
         </div>
       </div>
 
-      <div className="mt-5 rounded-2xl bg-surface-2/60 p-4" aria-live="polite">
+      <div className="mt-3 rounded-xl bg-surface-2/60 p-2.5" aria-live="polite">
         <div className="mb-2 text-xs font-semibold tracking-wide text-muted uppercase">What’s changing your juice</div>
         {why.length ? (
-          <ul className="space-y-1.5 text-sm">
+          <ul className="space-y-1 text-xs">
             {why.map((w) => (
               <li key={w.key} className="flex gap-2">
-                <span className={`tnum w-14 shrink-0 text-right font-semibold ${w.points > 0.05 ? "text-good-text" : w.points < -0.05 ? "text-critical-text" : "text-muted"}`}>
+                <span className={`tnum w-10 shrink-0 text-right font-semibold ${w.points > 0.05 ? "text-good-text" : w.points < -0.05 ? "text-critical-text" : "text-muted"}`}>
                   {Math.abs(w.points) < 0.05 ? "0.0" : signed(w.points)}
                 </span>
                 <span className="text-ink-2">
@@ -364,7 +372,7 @@ export function GrowYourJuiceSimulator({
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-ink-2">Move a slider to see how your score is recalculated. Nothing is added by hand: every change runs through the same scoring rules as the Rank page.</p>
+          <p className="text-xs text-ink-2">Move a slider to see how your score is recalculated. Nothing is added by hand: every change runs through the same scoring rules as the Rank page.</p>
         )}
         {p.notes.length > 0 && <p className="mt-2 text-xs text-muted">{p.notes.join(". ")}.</p>}
       </div>
@@ -375,8 +383,8 @@ export function GrowYourJuiceSimulator({
 function Lever({ Icon, note, children }: { Icon: LucideIcon; note: string; children: ReactNode }) {
   return (
     <div className="flex gap-3">
-      <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-ink">
-        <Icon className="size-4" aria-hidden />
+      <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-ink">
+        <Icon className="size-3.5" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
         {children}
@@ -419,10 +427,10 @@ export function JuiceComparison({
 }) {
   const diff = Math.round((projected - original) * 10) / 10;
   return (
-    <section className="wf-card p-5" aria-labelledby="cmp-h">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 id="cmp-h" className="text-lg font-semibold tracking-tight">
-          Compare My Juice
+    <section className="rounded-xl bg-surface-2/60 p-2.5" aria-labelledby="cmp-h">
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+        <h2 id="cmp-h" className="text-sm font-semibold">
+          Original vs projected
         </h2>
         <Segmented<"projected" | "original">
           size="sm"
@@ -452,16 +460,18 @@ export function JuiceComparison({
               key={x.k}
               onClick={() => setShowing(x.k)}
               aria-pressed={showing === x.k}
-              className={`flex flex-col items-center rounded-2xl p-2 transition-colors ${showing === x.k ? "bg-accent-soft ring-1 ring-accent/60" : "hover:bg-surface-2/60"}`}
+              className={`flex items-center gap-2 rounded-xl p-1.5 transition-colors ${showing === x.k ? "bg-accent-soft ring-1 ring-accent/60" : "hover:bg-surface-2/60"}`}
             >
-              <TangerineFallback score={x.v} size={92} label={`${x.label}: ${x.v.toFixed(1)} out of 100`} />
-              <span className="text-xs text-ink-2">{x.label}</span>
-              <span className="tnum text-xl font-semibold">{x.v.toFixed(1)}</span>
+              <TangerineFallback score={x.v} size={44} label={`${x.label}: ${x.v.toFixed(1)} out of 100`} />
+              <span className="text-left">
+                <span className="block text-[11px] text-ink-2">{x.label}</span>
+                <span className="tnum block text-lg leading-tight font-semibold">{x.v.toFixed(1)}</span>
+              </span>
             </button>
           ),
         )}
       </div>
-      <p className="mt-2 text-center text-xs text-muted">The 3D tangerine shows whichever one is selected.</p>
+      <p className="mt-1 text-center text-[11px] text-muted">The 3D tangerine shows the selected one. The original is never changed.</p>
     </section>
   );
 }
@@ -471,11 +481,11 @@ export function JuiceComparison({
 export function ResilienceBreakdown({ data, row, p }: { data: RankData; row: RankRow; p: PulseProjection }) {
   return (
     <section aria-labelledby="fuel-h">
-      <h2 id="fuel-h" className="mb-1 text-xl font-semibold tracking-tight">
+      <h2 id="fuel-h" className="sr-only">
         What’s Fueling Your Tangerine?
       </h2>
-      <p className="mb-4 text-sm text-ink-2">Your juice level is the sum of four parts. Each scores 0–100 and is weighted into the total.</p>
-      <div className="grid gap-4 md:grid-cols-2">
+      <p className="mb-2 text-xs text-ink-2">The juice level is the resilience score: four parts, each 0–100, weighted into the total (same model as the Rank page).</p>
+      <div className="grid gap-2">
         {CATEGORIES.map((c, i) => {
           const w = data.meta.weights[c];
           const now = p.base[c];
@@ -488,30 +498,30 @@ export function ResilienceBreakdown({ data, row, p }: { data: RankData; row: Ran
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06 }}
-              className="wf-card p-4"
+              className="rounded-xl bg-surface-2/60 p-2.5"
             >
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="font-semibold">{CATEGORY_META[c].name}</span>
-                <span className="text-xs text-muted">weight {Math.round(w * 100)}%</span>
-                <span className="tnum ml-auto text-xl font-semibold">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span className="text-sm font-semibold">{CATEGORY_META[c].name}</span>
+                <span className="text-[11px] text-muted">{Math.round(w * 100)}%</span>
+                <span className="tnum ml-auto text-base font-semibold">
                   {next.toFixed(0)}
                   <span className="text-sm text-muted">/100</span>
                 </span>
               </div>
               {/* segmented bar: 10 segments, filled by the projected score; outline marks the original */}
-              <div className="mt-2.5 grid grid-cols-10 gap-1" aria-hidden>
+              <div className="mt-1.5 grid grid-cols-10 gap-1" aria-hidden>
                 {Array.from({ length: 10 }, (_, k) => {
                   const fillNext = Math.min(1, Math.max(0, next / 10 - k));
                   const fillNow = Math.min(1, Math.max(0, now / 10 - k));
                   return (
                     <div key={k} className="relative h-2.5 overflow-hidden rounded-sm bg-surface-2">
                       <motion.div className="absolute inset-y-0 left-0" style={{ background: "linear-gradient(90deg, #FF8000, #FFB347)" }} animate={{ width: `${fillNext * 100}%` }} transition={{ duration: 0.6 }} />
-                      {fillNow > 0 && fillNow < 1 && Math.abs(d) >= 0.05 && <div className="absolute inset-y-0 w-0.5 bg-white/70" style={{ left: `${fillNow * 100}%` }} />}
+                      {fillNow > 0 && fillNow < 1 && Math.abs(d) >= 0.05 && <div className="absolute inset-y-0 w-0.5 bg-ink/70" style={{ left: `${fillNow * 100}%` }} />}
                     </div>
                   );
                 })}
               </div>
-              <div className="tnum mt-1.5 flex flex-wrap justify-between gap-2 text-xs text-muted">
+              <div className="tnum mt-1 flex flex-wrap justify-between gap-2 text-[11px] text-muted">
                 <span>
                   Contributes {(w * next).toFixed(1)} of {Math.round(w * 100)} pts
                 </span>
@@ -526,7 +536,7 @@ export function ResilienceBreakdown({ data, row, p }: { data: RankData; row: Ran
                   </span>
                 )}
               </div>
-              <p className="mt-2 text-sm leading-relaxed text-ink-2">{CATEGORY_META[c].how(row, p.base)}</p>
+              <p className="mt-1 text-xs leading-snug text-ink-2">{CATEGORY_META[c].how(row, p.base)}</p>
             </motion.div>
           );
         })}
@@ -593,27 +603,29 @@ export function PulseRecommendations({ data, row, hist, now, onTry }: { data: Ra
 
   return (
     <section aria-labelledby="rec-h">
-      <h2 id="rec-h" className="mb-1 text-xl font-semibold tracking-tight">
-        How to Keep Your Tangerine Growing
+      <h2 id="rec-h" className="mb-1 text-sm font-semibold">
+        Personalized recommendations
       </h2>
-      <p className="mb-4 text-sm text-ink-2">Based on your weakest parts and your account history. Each amount was tested against the scoring model.</p>
-      <div className={`grid gap-4 ${recs.length >= 3 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+      <p className="mb-2 text-xs text-ink-2">From this account&apos;s weakest score parts and its own history. Each amount was tested against the scoring model.</p>
+      <div className="grid gap-2">
         {recs.map((r) => (
-          <motion.div key={r.title} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="wf-card flex flex-col p-4">
-            <span className="mb-2 grid size-9 place-items-center rounded-xl bg-accent-soft text-accent-ink">
-              <r.Icon className="size-5" aria-hidden />
-            </span>
-            <div className="font-semibold">{r.title}</div>
-            <p className="mt-1 flex-1 text-sm leading-relaxed text-ink-2">{r.detail}</p>
+          <motion.div key={r.title} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col rounded-xl bg-surface-2/60 p-2.5">
+            <div className="flex items-center gap-2">
+              <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-ink">
+                <r.Icon className="size-4" aria-hidden />
+              </span>
+              <div className="text-sm font-semibold">{r.title}</div>
+            </div>
+            <p className="mt-1 flex-1 text-xs leading-relaxed text-ink-2">{r.detail}</p>
             {r.apply && (
-              <button onClick={() => onTry(r.apply!)} className="mt-3 flex items-center justify-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-semibold text-ink-2 hover:border-accent hover:text-ink">
+              <button onClick={() => onTry(r.apply!)} className="btn btn-secondary mt-2 self-start rounded-full px-3 py-1 text-xs font-semibold">
                 <Play className="size-3.5" aria-hidden /> Try it on my tangerine
               </button>
             )}
           </motion.div>
         ))}
       </div>
-      <p className="mt-3 text-xs text-muted">These show what the scoring model would say, not what you can afford. Only you know your full budget.</p>
+      <p className="mt-2 text-[11px] text-muted">These show what the scoring model would say, not what you can afford. Only you know your full budget.</p>
     </section>
   );
 }
@@ -690,19 +702,19 @@ export function AccountHistory({ hist, asOf }: { hist: PulseHistory | undefined;
   ];
   return (
     <section aria-labelledby="hist-h">
-      <h2 id="hist-h" className="mb-1 text-xl font-semibold tracking-tight">
-        From your account history
+      <h2 id="hist-h" className="mb-1 flex items-center gap-1.5 text-sm font-semibold">
+        From the account history <ProvTip k="pulseHistory" />
       </h2>
-      <p className="mb-4 text-sm text-ink-2">
+      <p className="mb-2 text-xs text-ink-2">
         {ym(hist.from)} to {ym(hist.to)}, from the bank’s records (monthly summaries, transactions and standing orders). Historical data up to {ym(asOf)}, not live banking.
       </p>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2">
         {items.map((it) => (
-          <div key={it.title} className="wf-card p-4">
-            <div className="mb-1.5 flex items-center gap-2 text-sm font-semibold">
-              <it.Icon className="size-4 text-accent-ink" aria-hidden /> {it.title}
+          <div key={it.title} className="rounded-xl bg-surface-2/60 p-2.5">
+            <div className="mb-0.5 flex items-center gap-1.5 text-xs font-semibold">
+              <it.Icon className="size-3.5 text-accent-ink" aria-hidden /> {it.title}
             </div>
-            <p className="text-sm leading-relaxed text-ink-2">{it.text}</p>
+            <p className="text-xs leading-relaxed text-ink-2">{it.text}</p>
           </div>
         ))}
       </div>

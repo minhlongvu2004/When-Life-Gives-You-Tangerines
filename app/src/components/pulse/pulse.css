@@ -1,8 +1,10 @@
-/* Tangerine Pulse palette, scoped to this page. Shared card/button classes come from ../whatif/whatif.css. */
+/* Tangerine Pulse palette. In dark mode it replaces the global dark tokens while the page is on screen.
+   The 3D stage is a dark showcase in both themes (the glowing fruit is lit for a dark backdrop), so it
+   carries the same tokens itself and its overlays stay readable in light mode too.
+   Shared card/button classes come from ../whatif/whatif.css and globals.css. */
 
-html:has(.pl-root),
-body:has(.pl-root) {
-  color-scheme: dark;
+:root[data-theme="dark"]:has(.pl-root),
+.pl-stage {
   --page: #080e20;
   --surface: #111b33;
   --surface-2: #18243f;
@@ -23,8 +25,19 @@ body:has(.pl-root) {
   --critical: #ff6b80;
   --critical-text: #ff9aa9;
   --critical-soft: rgba(255, 107, 128, 0.13);
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(17, 27, 51, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-highlight: rgba(255, 255, 255, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.6);
 }
-body:has(.pl-root) {
+.pl-stage {
+  color-scheme: dark;
+  color: var(--ink);
+  --wf-card: rgba(17, 27, 51, 0.78);
+  --wf-card-2: rgba(24, 36, 63, 0.7);
+}
+:root[data-theme="dark"]:has(.pl-root) body {
   background-image:
     radial-gradient(900px 520px at 50% 18%, rgba(255, 128, 0, 0.14), transparent 70%),
     radial-gradient(700px 500px at 0% 0%, rgba(139, 92, 246, 0.12), transparent 70%);
@@ -42,11 +55,11 @@ body:has(.pl-root) {
   box-shadow: 0 30px 80px -40px rgba(255, 128, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .pl-glass {
-  background: rgba(17, 27, 51, 0.62);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--wf-card);
+  border: 1px solid var(--border);
   backdrop-filter: blur(14px);
   border-radius: 1rem;
-  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 10px 30px -18px var(--shadow-color);
 }
 .pl-connector {
   background: linear-gradient(90deg, transparent, rgba(255, 179, 71, 0.45));
