@@ -22,6 +22,11 @@ export function FitToScreen({ children }: { children: ReactNode }) {
     const i = inner.current;
     if (!o || !i) return;
     const measure = () => {
+      // long scrolling pages (What If) opt out of zoom-to-fit and render at 100%
+      if (i.querySelector("[data-no-fit]")) {
+        setScale(1);
+        return;
+      }
       const prev = i.style.zoom;
       i.style.zoom = "1";
       const natural = i.offsetHeight; // height at 100%, read synchronously so nothing is painted

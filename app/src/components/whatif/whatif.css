@@ -1,0 +1,123 @@
+/* What If page: a dark navy theme scoped to this page only.
+   The rest of the site stays light; while .wf-root is on screen the shared tokens are swapped,
+   so the header and shared controls follow along without being edited. */
+
+html:has(.wf-root),
+body:has(.wf-root) {
+  color-scheme: dark;
+  --page: #0a1022;
+  --surface: #111a33;
+  --surface-2: #18233f;
+  --ink: #eef1fa;
+  --ink-2: #b9c1d8;
+  --muted: #8a94b2;
+  --grid: #223056;
+  --axis: #3a4872;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #f2691d;
+  --accent-ink: #ff9a5c;
+  --accent-soft: rgba(242, 105, 29, 0.16);
+  --good: #4ade80;
+  --good-text: #86efac;
+  --good-soft: rgba(74, 222, 128, 0.12);
+  --critical: #f87171;
+  --critical-text: #fca5a5;
+  --critical-soft: rgba(248, 113, 113, 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
+}
+body:has(.wf-root) {
+  background-image:
+    radial-gradient(900px 520px at 8% -8%, rgba(139, 92, 246, 0.2), transparent 70%),
+    radial-gradient(900px 520px at 95% 0%, rgba(242, 105, 29, 0.14), transparent 70%),
+    radial-gradient(700px 500px at 50% 110%, rgba(26, 159, 181, 0.12), transparent 70%);
+}
+
+.wf-root {
+  /* chart marks: validated pair on #111a33 (lightness band, CVD ΔE ≥ 8, contrast ≥ 3:1) */
+  --wf-well: #1a9fb5;
+  --wf-bad: #e2608a;
+  /* lighter tints for text, glows and accents */
+  --wf-well-ink: #67e8f9;
+  --wf-well-soft: rgba(26, 159, 181, 0.16);
+  --wf-bad-ink: #f9a8d4;
+  --wf-bad-soft: rgba(226, 96, 138, 0.16);
+  --wf-violet: #8b5cf6;
+  --wf-violet-ink: #c4b5fd;
+  --wf-violet-soft: rgba(139, 92, 246, 0.16);
+  --wf-card: rgba(17, 26, 51, 0.78);
+  --wf-card-2: rgba(24, 35, 63, 0.7);
+}
+
+.wf-card {
+  background: var(--wf-card);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 40px -20px rgba(0, 0, 0, 0.6);
+}
+.wf-card-well {
+  border-color: rgba(103, 232, 249, 0.28);
+  box-shadow: 0 0 0 1px rgba(26, 159, 181, 0.12) inset, 0 20px 60px -30px rgba(26, 159, 181, 0.55);
+}
+.wf-card-bad {
+  border-color: rgba(249, 168, 212, 0.28);
+  box-shadow: 0 0 0 1px rgba(226, 96, 138, 0.12) inset, 0 20px 60px -30px rgba(226, 96, 138, 0.55);
+}
+.wf-gradient-text {
+  background: linear-gradient(100deg, #ffb37a 0%, var(--accent) 35%, #b794f6 75%, var(--wf-violet-ink) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.wf-cta {
+  background: linear-gradient(100deg, var(--accent), #c2410c 40%, var(--wf-violet));
+  box-shadow: 0 10px 40px -10px rgba(242, 105, 29, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+.wf-cta:hover {
+  filter: brightness(1.08);
+}
+.wf-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.wf-input:focus {
+  border-color: var(--accent);
+}
+.wf-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}
+.wf-root input[type="range"]::-webkit-slider-thumb {
+  background: #fff;
+}
+.wf-grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+@keyframes wf-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.15;
+    transform: scale(1.18);
+  }
+}
+.wf-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wf-pulse 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wf-pulse {
+    animation: none;
+  }
+}

@@ -7,6 +7,7 @@ const NAV = [
   { href: "/", label: "Engine" },
   { href: "/finding", label: "Finding" },
   { href: "/method", label: "Method" },
+  { href: "/whatif", label: "What If" },
 ];
 
 export function TangerineMark({ size = 26 }: { size?: number }) {
