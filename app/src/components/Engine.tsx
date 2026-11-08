@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
+import { nowYM } from "@/lib/whatif/scenarios";
 import { StepCustomer, StepPlan, StepShock, type Peers } from "./guided";
 
 const FIFTHS = ["lowest", "low", "middle", "high", "highest"];
@@ -18,6 +19,8 @@ export function Engine() {
   const [step, setStep] = useState(0);
   const [mode, setMode] = useState<Mode>("judge");
   const [shock, setShock] = useState<Shock>(NO_SHOCK);
+  const [start, setStart] = useState<string | null>(null); // YYYY-MM the shock starts, null = this month
+  const now = useMemo(() => nowYM(), []);
   const [detail, setDetail] = useState<AccountDetail | null | undefined>(undefined);
 
   const all = useMemo(() => (metrics ? [...metrics.values()] : []), [metrics]);
@@ -134,7 +137,18 @@ export function Engine() {
           className="flex flex-col justify-center pb-2"
         >
           {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} />}
-          {step === 1 && <StepShock m={m} mode={mode} setMode={setMode} shock={shock} setShock={setShock} all={all} onNext={() => setStep(2)} />}
+          {step === 1 && <StepShock
+              m={m}
+              mode={mode}
+              setMode={setMode}
+              shock={shock}
+              setShock={setShock}
+              start={start}
+              setStart={setStart}
+              now={now}
+              all={all}
+              onNext={() => setStep(2)}
+            />}
           {step === 2 && <StepPlan m={m} mode={mode} shock={shock} onRestart={close} />}
         </motion.div>
       </AnimatePresence>
@@ -201,7 +215,7 @@ function Landing({
           />
           <button
             disabled={!ready}
-            className="flex items-center gap-1.5 rounded-xl bg-accent px-5 py-2.5 font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="btn btn-primary rounded-xl px-5 py-2.5"
           >
             Go <ArrowRight className="size-4" aria-hidden />
           </button>
@@ -212,14 +226,14 @@ function Landing({
             <button
               key={f.id}
               onClick={() => onOpen(f.id)}
-              className="rounded-full border border-line bg-surface/70 px-3.5 py-1.5 text-ink-2 hover:border-accent hover:text-ink"
+              className="btn btn-secondary rounded-full px-3.5 py-1.5"
             >
               {f.label}
             </button>
           ))}
           <button
             onClick={() => all.length && onOpen(all[Math.floor(Math.random() * all.length)].id)}
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted hover:text-ink"
+            className="btn btn-outline rounded-full px-3 py-1.5"
           >
             <Shuffle className="size-3.5" aria-hidden /> Surprise me
           </button>

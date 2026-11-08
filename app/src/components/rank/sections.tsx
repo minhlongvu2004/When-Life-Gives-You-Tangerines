@@ -378,7 +378,7 @@ export function RankDistribution({ data, row }: { data: RankData; row: RankRow }
             <XAxis dataKey="mid" type="number" domain={[0, 100]} ticks={[0, 20, 40, 60, 80, 100]} stroke="var(--axis)" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} />
             <YAxis stroke="var(--axis)" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={false} />
             <Tooltip
-              cursor={{ fill: "rgba(255,255,255,.04)" }}
+              cursor={{ fill: "var(--grid)", fillOpacity: 0.5 }}
               content={({ active, payload }) =>
                 active && payload?.length ? (
                   <div className="rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-xl">

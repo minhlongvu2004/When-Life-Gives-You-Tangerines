@@ -57,7 +57,7 @@ export function sanitizeShock(raw: unknown): Shock | null {
   if (typeof raw !== "object" || raw === null) return null;
   const r = raw as Record<string, unknown>;
   const incomePct = num(r.incomePct, 0, 2);
-  const billsPct = num(r.billsPct, 0, 2);
+  const billsPct = num(r.billsPct, -1, 2);
   const extraMonthly = num(r.extraMonthly, 0, 20_000);
   const oneOffMult = num(r.oneOffMult, 0, 12);
   const oneOffAbs = num(r.oneOffAbs, 0, 200_000);

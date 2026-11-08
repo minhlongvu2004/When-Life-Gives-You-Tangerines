@@ -12,9 +12,15 @@ export const metadata: Metadata = {
   icons: { icon: "/tangerine.svg" },
 };
 
+// Runs before first paint so the page never flashes the wrong theme.
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("theme");if(t!=="light"&&t!=="dark")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}})()`;
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="flex h-dvh flex-col overflow-hidden antialiased">
         <SiteHeader />
         <FitToScreen>{children}</FitToScreen>

@@ -145,7 +145,7 @@ export function Finding() {
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-page shadow-lg shadow-black/10 transition hover:-translate-y-0.5"
+          className="btn btn-primary gap-2 rounded-full px-6 py-3 text-sm"
         >
           Test it on any customer <ArrowRight className="size-4" aria-hidden />
         </Link>

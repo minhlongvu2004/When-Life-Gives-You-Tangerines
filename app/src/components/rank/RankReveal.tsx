@@ -73,7 +73,7 @@ export function AccountRankSearch({
                 setV(String(x.id));
                 onSubmit(String(x.id));
               }}
-              className="flex items-center gap-1.5 rounded-full border border-line bg-[var(--wf-card-2)] px-3 py-1.5 text-ink-2 hover:border-accent hover:text-ink"
+              className="btn btn-secondary rounded-full px-3 py-1.5"
             >
               {x.label === "Surprise me" ? <Shuffle className="size-3.5" aria-hidden /> : <ArrowRight className="size-3.5" aria-hidden />}
               {x.label}
@@ -172,7 +172,7 @@ export function RankReveal({ data, row, replayKey, onReplay }: { data: RankData;
 
       <div className="relative flex items-center justify-between gap-3">
         <div className="text-xs font-bold tracking-[0.25em] text-ink-2 uppercase">Your Financial Resilience Rank</div>
-        <button onClick={onReplay} className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted hover:bg-surface-2 hover:text-ink" aria-label="Replay the rank reveal">
+        <button onClick={onReplay} className="btn btn-outline gap-1 rounded-full px-2.5 py-1 text-xs" aria-label="Replay the rank reveal">
           <RotateCcw className="size-3.5" aria-hidden /> Replay
         </button>
       </div>

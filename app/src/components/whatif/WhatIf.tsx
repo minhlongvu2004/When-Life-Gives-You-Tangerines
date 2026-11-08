@@ -273,11 +273,11 @@ function Picker({ metrics, featured, onOpen }: { metrics: Map<number, Metrics>; 
       {err && <p className="mt-3 text-sm text-critical-text">{err}</p>}
       <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm">
         {featured.slice(0, 3).map((f) => (
-          <button key={f.id} onClick={() => onOpen(f.id)} className="rounded-full border border-line bg-[var(--wf-card-2)] px-3.5 py-1.5 text-ink-2 hover:border-accent hover:text-ink">
+          <button key={f.id} onClick={() => onOpen(f.id)} className="btn btn-secondary rounded-full px-3.5 py-1.5">
             {f.label}
           </button>
         ))}
-        <button onClick={() => onOpen(all[Math.floor(Math.random() * all.length)])} className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-muted hover:text-ink">
+        <button onClick={() => onOpen(all[Math.floor(Math.random() * all.length)])} className="btn btn-outline rounded-full px-3 py-1.5">
           <Shuffle className="size-3.5" aria-hidden /> Surprise me
         </button>
       </div>
@@ -452,7 +452,7 @@ function Results({
     <div className="space-y-6">
       {/* toolbar */}
       <div className="sticky top-2 z-30 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-[var(--surface)]/85 px-3 py-2 shadow-lg backdrop-blur-xl">
-        <button onClick={onEdit} className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm text-ink-2 hover:bg-surface-2 hover:text-ink">
+        <button onClick={onEdit} className="btn btn-outline rounded-full px-2.5 py-1.5 text-sm">
           <ArrowLeft className="size-4" aria-hidden /> <span className="hidden sm:inline">Setup</span>
         </button>
         <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
@@ -644,7 +644,7 @@ function RewriteSheet({
             <FutureDot which="bad" size={7} />
             {dirty ? "Both futures will be recalculated" : "No changes yet"}
           </span>
-          <button onClick={onClose} className="ml-auto rounded-full px-4 py-2 text-sm text-ink-2 hover:bg-surface-2 hover:text-ink">
+          <button onClick={onClose} className="btn btn-outline ml-auto rounded-full px-4 py-2 text-sm">
             Cancel
           </button>
           <button

@@ -1,10 +1,12 @@
 @import "tailwindcss";
 
+/* Light is the default. The inline script in layout.tsx sets html[data-theme] before first paint
+   (saved choice, else the OS preference), so the dark tokens below apply with no flash. */
 :root {
   color-scheme: light;
-  --page: #faf9f9;
+  --page: #faf8f5;
   --surface: #ffffff;
-  --surface-2: #f0f0ef;
+  --surface-2: #f2f0ed;
   --ink: #3a3835;
   --ink-2: #55524d;
   --muted: #716b60;
@@ -24,6 +26,55 @@
   --critical-soft: #fbe6e6;
   --warning: #fab219;
   --warning-soft: #faf9ec;
+  --violet: #7c3aed;
+  --violet-ink: #6d28d9;
+  --violet-soft: rgba(124, 58, 237, 0.1);
+  /* glass */
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(58, 56, 53, 0.14);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --shadow-color: rgba(58, 40, 20, 0.22);
+  --overlay: rgba(30, 24, 18, 0.28);
+  --glow-1: rgba(242, 105, 29, 0.1);
+  --glow-2: rgba(124, 58, 237, 0.05);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0a1022;
+  --surface: #111a33;
+  --surface-2: #18233f;
+  --ink: #eef1fa;
+  --ink-2: #b9c1d8;
+  --muted: #8a94b2;
+  --grid: #223056;
+  --axis: #3a4872;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #f2691d;
+  --accent-ink: #ff9a5c;
+  --accent-soft: rgba(242, 105, 29, 0.16);
+  --series-1: #7fa7cc;
+  --series-2: #f2691d;
+  --good: #4ade80;
+  --good-text: #86efac;
+  --good-soft: rgba(74, 222, 128, 0.12);
+  --critical: #f87171;
+  --critical-text: #fca5a5;
+  --critical-soft: rgba(248, 113, 113, 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
+  --violet: #8b5cf6;
+  --violet-ink: #c4b5fd;
+  --violet-soft: rgba(139, 92, 246, 0.16);
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(24, 35, 63, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-highlight: rgba(255, 255, 255, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.6);
+  --overlay: rgba(2, 6, 18, 0.55);
+  --glow-1: rgba(242, 105, 29, 0.14);
+  --glow-2: rgba(139, 92, 246, 0.18);
 }
 
 @theme inline {
@@ -48,6 +99,12 @@
   --color-critical-soft: var(--critical-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
+  --color-violet: var(--violet);
+  --color-violet-ink: var(--violet-ink);
+  --color-violet-soft: var(--violet-soft);
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-glass-border: var(--glass-border);
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -57,7 +114,9 @@ body {
   color: var(--ink);
 }
 body {
-  background-image: radial-gradient(1200px 500px at 85% -10%, var(--accent-soft), transparent 70%);
+  background-image:
+    radial-gradient(1200px 500px at 85% -10%, var(--glow-1), transparent 70%),
+    radial-gradient(900px 520px at 5% -8%, var(--glow-2), transparent 70%);
   background-repeat: no-repeat;
 }
 body {
@@ -67,6 +126,19 @@ body {
 }
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* Smooth colour change while the theme switches (the class is added for ~350ms by ThemeToggle). */
+html.theme-fade,
+html.theme-fade *,
+html.theme-fade *::before,
+html.theme-fade *::after {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease,
+    fill 0.3s ease,
+    stroke 0.3s ease !important;
 }
 
 /* range inputs */
@@ -101,8 +173,177 @@ input[type="range"]:focus-visible::-webkit-slider-thumb {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+:root[data-theme="dark"] input[type="range"]::-webkit-slider-thumb {
+  background: #fff;
+}
 
 .recharts-wrapper:focus,
 .recharts-surface:focus {
   outline: none;
+}
+
+@layer components {
+  /* ---------------------------------------------------------------- glass buttons
+     .btn + one of .btn-primary / .btn-secondary / .btn-outline / .btn-danger.
+     In the components layer so size/spacing utilities on the element still win. */
+  .btn,
+  .wf-cta {
+    --btn-bg: var(--glass);
+    --btn-border: var(--glass-border);
+    --btn-fg: var(--ink-2);
+    --btn-hover-fg: var(--ink);
+    --btn-glow: var(--shadow-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
+    color: var(--btn-fg);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 6px 18px -12px var(--btn-glow);
+    cursor: pointer;
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      background 0.18s ease,
+      border-color 0.18s ease,
+      color 0.18s ease,
+      filter 0.18s ease;
+  }
+  .btn:hover:not(:disabled),
+  .wf-cta:hover:not(:disabled) {
+    color: var(--btn-hover-fg);
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 12px 26px -14px var(--btn-glow);
+  }
+  .btn:active:not(:disabled),
+  .wf-cta:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+  }
+  .btn:focus-visible,
+  .wf-cta:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .btn:disabled,
+  .wf-cta:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    filter: saturate(0.4);
+    box-shadow: none;
+  }
+
+  .btn-primary,
+  .wf-cta {
+    --btn-bg: linear-gradient(180deg, rgba(240, 106, 32, 0.94), rgba(196, 74, 12, 0.94));
+    --btn-border: rgba(255, 196, 150, 0.55);
+    --btn-fg: #fff;
+    --btn-hover-fg: #fff;
+    --btn-glow: rgba(242, 105, 29, 0.75);
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(90, 30, 0, 0.35);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 8px 22px -12px var(--btn-glow);
+  }
+  .btn-primary:hover:not(:disabled),
+  .wf-cta:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
+  .btn-secondary {
+    --btn-bg: var(--glass);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    --btn-border: color-mix(in srgb, var(--accent) 55%, var(--glass-border));
+  }
+  .btn-outline {
+    --btn-bg: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+  .btn-outline:hover:not(:disabled) {
+    --btn-bg: var(--glass);
+  }
+  .btn-danger {
+    --btn-bg: color-mix(in srgb, var(--critical) 12%, transparent);
+    --btn-border: color-mix(in srgb, var(--critical) 45%, transparent);
+    --btn-fg: var(--critical-text);
+    --btn-hover-fg: var(--critical-text);
+    --btn-glow: color-mix(in srgb, var(--critical) 60%, transparent);
+  }
+  .btn-danger:hover:not(:disabled) {
+    --btn-bg: color-mix(in srgb, var(--critical) 20%, transparent);
+  }
+
+  /* glass panels and fields */
+  .glass-card {
+    background: var(--glass-strong);
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 18px 50px -32px var(--shadow-color);
+  }
+  .glass-field {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 0.65rem;
+    color: var(--ink);
+    outline: none;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+  .glass-field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .glass-field[aria-invalid="true"] {
+    border-color: var(--critical);
+  }
+}
+
+/* No backdrop-filter (older browsers): solid colours so text stays readable. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .btn-secondary,
+  .btn-outline:hover {
+    --btn-bg: var(--surface);
+  }
+  .btn-primary,
+  .wf-cta {
+    --btn-bg: #d4560f;
+  }
+  .glass-card {
+    background: var(--surface);
+  }
+  .glass-field {
+    background: var(--surface);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .wf-cta {
+    transition: none;
+  }
+  .btn:hover:not(:disabled),
+  .btn:active:not(:disabled),
+  .wf-cta:hover:not(:disabled),
+  .wf-cta:active:not(:disabled) {
+    transform: none;
+  }
+  html.theme-fade,
+  html.theme-fade * {
+    transition: none !important;
+  }
 }

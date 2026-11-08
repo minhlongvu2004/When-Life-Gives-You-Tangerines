@@ -1,43 +1,26 @@
-/* What If page: a dark navy theme scoped to this page only.
-   The rest of the site stays light; while .wf-root is on screen the shared tokens are swapped,
-   so the header and shared controls follow along without being edited. */
-
-html:has(.wf-root),
-body:has(.wf-root) {
-  color-scheme: dark;
-  --page: #0a1022;
-  --surface: #111a33;
-  --surface-2: #18233f;
-  --ink: #eef1fa;
-  --ink-2: #b9c1d8;
-  --muted: #8a94b2;
-  --grid: #223056;
-  --axis: #3a4872;
-  --border: rgba(255, 255, 255, 0.1);
-  --accent: #f2691d;
-  --accent-ink: #ff9a5c;
-  --accent-soft: rgba(242, 105, 29, 0.16);
-  --good: #4ade80;
-  --good-text: #86efac;
-  --good-soft: rgba(74, 222, 128, 0.12);
-  --critical: #f87171;
-  --critical-text: #fca5a5;
-  --critical-soft: rgba(248, 113, 113, 0.12);
-  --warning: #fbbf24;
-  --warning-soft: rgba(251, 191, 36, 0.12);
-}
-body:has(.wf-root) {
-  background-image:
-    radial-gradient(900px 520px at 8% -8%, rgba(139, 92, 246, 0.2), transparent 70%),
-    radial-gradient(900px 520px at 95% 0%, rgba(242, 105, 29, 0.14), transparent 70%),
-    radial-gradient(700px 500px at 50% 110%, rgba(26, 159, 181, 0.12), transparent 70%);
-}
+/* What If page styles (the Rank and Pulse pages reuse the .wf-* classes).
+   Colours follow the global light/dark theme from globals.css; only the page accents live here. */
 
 .wf-root {
-  /* chart marks: validated pair on #111a33 (lightness band, CVD ΔE ≥ 8, contrast ≥ 3:1) */
+  /* chart marks: the dark pair is validated on #111a33 (lightness band, CVD ΔE ≥ 8, contrast ≥ 3:1) */
+  --wf-well: #128196;
+  --wf-bad: #c8416f;
+  /* tints for text, glows and accents */
+  --wf-well-ink: #0e6f82;
+  --wf-well-soft: rgba(18, 129, 150, 0.12);
+  --wf-bad-ink: #b02f5e;
+  --wf-bad-soft: rgba(200, 65, 111, 0.12);
+  --wf-violet: #7c3aed;
+  --wf-violet-ink: #6d28d9;
+  --wf-violet-soft: rgba(124, 58, 237, 0.1);
+  --wf-card: rgba(255, 255, 255, 0.78);
+  --wf-card-2: rgba(242, 240, 237, 0.85);
+  --wf-grid-line: rgba(58, 56, 53, 0.05);
+  --wf-card-shadow: rgba(58, 40, 20, 0.22);
+}
+:root[data-theme="dark"] .wf-root {
   --wf-well: #1a9fb5;
   --wf-bad: #e2608a;
-  /* lighter tints for text, glows and accents */
   --wf-well-ink: #67e8f9;
   --wf-well-soft: rgba(26, 159, 181, 0.16);
   --wf-bad-ink: #f9a8d4;
@@ -47,6 +30,8 @@ body:has(.wf-root) {
   --wf-violet-soft: rgba(139, 92, 246, 0.16);
   --wf-card: rgba(17, 26, 51, 0.78);
   --wf-card-2: rgba(24, 35, 63, 0.7);
+  --wf-grid-line: rgba(255, 255, 255, 0.035);
+  --wf-card-shadow: rgba(0, 0, 0, 0.6);
 }
 
 .wf-card {
@@ -54,7 +39,7 @@ body:has(.wf-root) {
   border: 1px solid var(--border);
   border-radius: 1.25rem;
   backdrop-filter: blur(12px);
-  box-shadow: 0 10px 40px -20px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 10px 40px -20px var(--wf-card-shadow);
 }
 .wf-card-well {
   border-color: rgba(103, 232, 249, 0.28);
@@ -65,17 +50,10 @@ body:has(.wf-root) {
   box-shadow: 0 0 0 1px rgba(226, 96, 138, 0.12) inset, 0 20px 60px -30px rgba(226, 96, 138, 0.55);
 }
 .wf-gradient-text {
-  background: linear-gradient(100deg, #ffb37a 0%, var(--accent) 35%, #b794f6 75%, var(--wf-violet-ink) 100%);
+  background: linear-gradient(100deg, #e0560c 0%, var(--accent) 35%, #8b5cf6 75%, var(--wf-violet-ink) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-}
-.wf-cta {
-  background: linear-gradient(100deg, var(--accent), #c2410c 40%, var(--wf-violet));
-  box-shadow: 0 10px 40px -10px rgba(242, 105, 29, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
-}
-.wf-cta:hover {
-  filter: brightness(1.08);
 }
 .wf-input {
   background: var(--surface-2);
@@ -88,16 +66,13 @@ body:has(.wf-root) {
 .wf-input:focus {
   border-color: var(--accent);
 }
-.wf-input::-webkit-calendar-picker-indicator {
+:root[data-theme="dark"] .wf-input::-webkit-calendar-picker-indicator {
   filter: invert(0.8);
-}
-.wf-root input[type="range"]::-webkit-slider-thumb {
-  background: #fff;
 }
 .wf-grid-bg {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    linear-gradient(var(--wf-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--wf-grid-line) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 @keyframes wf-pulse {
@@ -120,4 +95,8 @@ body:has(.wf-root) {
   .wf-pulse {
     animation: none;
   }
+}
+
+:root[data-theme="dark"] .wf-gradient-text {
+  background-image: linear-gradient(100deg, #ffb37a 0%, var(--accent) 35%, #b794f6 75%, var(--wf-violet-ink) 100%);
 }
