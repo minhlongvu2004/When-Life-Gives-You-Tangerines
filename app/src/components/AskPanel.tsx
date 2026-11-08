@@ -159,6 +159,7 @@ export function AskPanel({ m, shock, mode }: { m: Metrics; shock: Shock; mode: M
             )}
           </div>
 
+          {!msgs.some((x) => x.role === "me") && (
           <div className="flex flex-wrap gap-1.5 px-4 pb-3">
             {QUESTIONS.map((q) => {
               const label = q.chip(shock.durationMonths);
@@ -174,6 +175,7 @@ export function AskPanel({ m, shock, mode }: { m: Metrics; shock: Shock; mode: M
               );
             })}
           </div>
+          )}
           <form
             className="flex gap-2 border-t border-line px-3 pt-2.5 pb-3"
             onSubmit={(e) => {
