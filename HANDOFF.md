@@ -5,13 +5,11 @@ Written 2026-11-08. This file only records state. It changes no code.
 ## Branch and git status
 
 - **Branch:** `dev-long-theme-fit` (never merged into `main`; nothing deployed).
-- **Last commit:** `efeee62`, "Merge origin/superfinal into dev-long-theme-fit". It is **pushed**; the branch matched `origin/dev-long-theme-fit` before the work below.
-- **Uncommitted and unpushed** (the latest work, in the working tree only):
-  - modified: `app/src/components/Engine.tsx`, `guided.tsx`, `MethodTabs.tsx`; `app/src/lib/recovery.ts`, `recovery.test.ts`, `recovery.data.test.ts`
-  - new: `app/src/components/StepBoundary.tsx`
-  - new, untracked: this `HANDOFF.md`
+- **Everything is committed and pushed.** The branch matches `origin/dev-long-theme-fit`.
+  - `0efbf65`: "Fix blank engine steps, simplify What if? flow, add HANDOFF.md" (the latest work below, plus this file).
+  - `efeee62`: "Merge origin/superfinal into dev-long-theme-fit".
+- No pull request is open. `main`, `dev-long` and `superfinal` are untouched.
 - Not tracked on purpose: `cache/` (old Streamlit cache).
-- To keep the work: `git add -A app HANDOFF.md && git commit`, then `git push`. To drop it, discard those files first and check with `git status`.
 
 ## What was done
 
@@ -21,7 +19,7 @@ Earlier commits on this branch (all pushed):
 - New Recovery Plan page (`RecoveryPlan.tsx`) on a tested month-by-month model (`app/src/lib/recovery.ts`): funds over time, monthly bridge, plan comparison, milestones, what-if switches, text summaries and "View as table".
 - Merge of teammates' `origin/superfinal` (database routes with static fallback, What-if workspace and shock library, Rank, What If and Pulse pages, theme toggle). Conflicts in `Engine.tsx`, `guided.tsx` and `ui.tsx` were resolved: their What-if page is the base with my wording on top, and my Recovery Plan replaces their old plan page. The app defaults to light mode; the toggle still switches to dark.
 
-Latest work (**uncommitted**):
+Latest work (commit `0efbf65`, pushed):
 - **Blank-page fix.** Root cause: opening the My shocks tab and then going to Recovery Plan left the content blank, with no error logged (the old step stayed mounted and invisible). This points to the page waiting for a leaving animation that never finished. `Engine.tsx` no longer waits for the old step to leave; the new step just fades in.
 - **Safety net.** `StepBoundary.tsx` shows "This step didn't load" with Try again, Back to Customer and technical details if a step throws.
 - **Removed** the description bar (star icon, "Describe it…", Apply) and the **My shocks** tab. `shock/CustomShocks.tsx` is now unused but still in the repo.
