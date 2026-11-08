@@ -72,7 +72,7 @@ export function RankImprovementSimulator({
         title="Climb the Ranks"
         sub="Explore how changes to your financial habits could improve your resilience."
         right={
-          <button onClick={() => setChanges(NO_CHANGES)} disabled={!dirty} className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-40">
+          <button onClick={() => setChanges(NO_CHANGES)} disabled={!dirty} className="btn btn-outline gap-1 rounded-full px-3 py-1.5 text-xs">
             <RotateCcw className="size-3.5" aria-hidden /> Reset
           </button>
         }
@@ -353,7 +353,7 @@ export function NextLeagueRoadmap({ data, row, now, onTry }: { data: RankData; r
                   <p className="mt-0.5 text-sm text-ink-2">{s.detail}</p>
                 </div>
                 {s.changes && (
-                  <button onClick={() => onTry(s.changes!)} className="flex shrink-0 items-center gap-1 rounded-full border border-line px-3 py-1.5 text-xs font-semibold text-ink-2 hover:border-accent hover:text-ink">
+                  <button onClick={() => onTry(s.changes!)} className="btn btn-secondary shrink-0 gap-1 rounded-full px-3 py-1.5 text-xs font-semibold">
                     <Play className="size-3" aria-hidden /> Try it
                   </button>
                 )}

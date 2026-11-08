@@ -107,7 +107,7 @@ export function AccountPulseSearch({
                 setV(String(x.id));
                 onSubmit(String(x.id));
               }}
-              className="rounded-full border border-line bg-surface-2/70 px-3 py-1.5 text-ink-2 hover:border-accent hover:text-ink"
+              className="btn btn-secondary rounded-full px-3 py-1.5"
             >
               {x.label}
             </button>
@@ -301,7 +301,7 @@ export function GrowYourJuiceSimulator({
           </h2>
           <p className="mt-1 text-sm text-ink-2">Explore how financial improvements could strengthen your resilience.</p>
         </div>
-        <button onClick={onReset} disabled={!dirty} className="flex items-center gap-1.5 rounded-full border border-line px-3.5 py-1.5 text-sm text-ink-2 hover:border-accent hover:text-ink disabled:opacity-40">
+        <button onClick={onReset} disabled={!dirty} className="btn btn-secondary rounded-full px-3.5 py-1.5 text-sm">
           <RotateCcw className="size-4" aria-hidden /> Reset My Tangerine
         </button>
       </div>
@@ -506,7 +506,7 @@ export function ResilienceBreakdown({ data, row, p }: { data: RankData; row: Ran
                   return (
                     <div key={k} className="relative h-2.5 overflow-hidden rounded-sm bg-surface-2">
                       <motion.div className="absolute inset-y-0 left-0" style={{ background: "linear-gradient(90deg, #FF8000, #FFB347)" }} animate={{ width: `${fillNext * 100}%` }} transition={{ duration: 0.6 }} />
-                      {fillNow > 0 && fillNow < 1 && Math.abs(d) >= 0.05 && <div className="absolute inset-y-0 w-0.5 bg-white/70" style={{ left: `${fillNow * 100}%` }} />}
+                      {fillNow > 0 && fillNow < 1 && Math.abs(d) >= 0.05 && <div className="absolute inset-y-0 w-0.5 bg-ink/70" style={{ left: `${fillNow * 100}%` }} />}
                     </div>
                   );
                 })}
@@ -606,7 +606,7 @@ export function PulseRecommendations({ data, row, hist, now, onTry }: { data: Ra
             <div className="font-semibold">{r.title}</div>
             <p className="mt-1 flex-1 text-sm leading-relaxed text-ink-2">{r.detail}</p>
             {r.apply && (
-              <button onClick={() => onTry(r.apply!)} className="mt-3 flex items-center justify-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-semibold text-ink-2 hover:border-accent hover:text-ink">
+              <button onClick={() => onTry(r.apply!)} className="btn btn-secondary mt-3 rounded-full px-3 py-1.5 text-sm font-semibold">
                 <Play className="size-3.5" aria-hidden /> Try it on my tangerine
               </button>
             )}

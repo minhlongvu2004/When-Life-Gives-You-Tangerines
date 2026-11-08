@@ -1,4 +1,20 @@
-/* Rank page extras. The dark navy theme itself comes from ../whatif/whatif.css (.wf-root). */
+/* Rank page extras. Theme colours come from globals.css and ../whatif/whatif.css (.wf-root). */
+
+/* league text colours: deep shades on light backgrounds, pale tints on dark */
+:root {
+  --lg-diamond-ink: #0e7490;
+  --lg-platinum-ink: #6d28d9;
+  --lg-gold-ink: #92400e;
+  --lg-silver-ink: #475569;
+  --lg-bronze-ink: #9a3412;
+}
+:root[data-theme="dark"] {
+  --lg-diamond-ink: #a5f3fc;
+  --lg-platinum-ink: #ddd6fe;
+  --lg-gold-ink: #fcd34d;
+  --lg-silver-ink: #e2e8f0;
+  --lg-bronze-ink: #fdba74;
+}
 
 .rk-glow-text {
   text-shadow: 0 0 28px var(--rk-glow, rgba(242, 105, 29, 0.55));

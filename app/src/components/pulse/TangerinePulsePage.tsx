@@ -211,7 +211,7 @@ export function TangerinePulsePage() {
                           <span className="hidden items-center gap-1.5 sm:flex">
                             <Move3d className="size-4" aria-hidden /> Drag to rotate · scroll to zoom
                           </span>
-                          <button onClick={() => setResetCam((k) => k + 1)} className="pointer-events-auto flex items-center gap-1 rounded-full border border-line bg-surface/80 px-3 py-1.5 text-ink-2 hover:text-ink">
+                          <button onClick={() => setResetCam((k) => k + 1)} className="btn btn-secondary pointer-events-auto gap-1 rounded-full px-3 py-1.5">
                             <RotateCcw className="size-3.5" aria-hidden /> Reset view
                           </button>
                         </>
