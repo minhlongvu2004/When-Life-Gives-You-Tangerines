@@ -9,7 +9,7 @@ import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
 import { StepCustomer, StepPlan, StepShock, type Peers } from "./guided";
 
 const FIFTHS = ["lowest", "low", "middle", "high", "highest"];
-const STEPS = ["Customer", "Shock", "Plan"] as const;
+const STEPS = ["Customer", "Shock", "Recovery Plan"] as const;
 
 export function Engine() {
   const metrics = usePromise(loadMetrics, []);

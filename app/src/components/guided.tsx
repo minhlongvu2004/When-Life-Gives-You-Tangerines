@@ -411,7 +411,7 @@ export function StepShock({
       {/* sliders (left) drive the result (right) */}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
-          <div className="mb-3 text-sm font-semibold">Shape the shock</div>
+          <div className="mb-3 text-sm font-semibold">Adjust your scenario</div>
           <ShockSliders m={m} shock={shock} setShock={setShock} income={sc.income} />
         </div>
 
@@ -455,7 +455,7 @@ export function StepShock({
                 )}
               </div>
               <div className="mt-5">
-                <NextButton onClick={onNext}>Make a plan</NextButton>
+                <NextButton onClick={onNext}>Recovery Plan</NextButton>
               </div>
             </>
           )}
@@ -469,7 +469,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
   const set = (p: Partial<Shock>) => setShock({ ...shock, ...p });
   return (
     <div className="grid gap-y-3">
-      <div>
+      <div className="flex items-center gap-1.5">
         <Toggle
           checked={shock.jobLoss}
           onChange={(on) => set(on ? { jobLoss: true, incomePct: shock.incomePct === 1 ? 0.55 : shock.incomePct } : { jobLoss: false, incomePct: 1 })}
@@ -477,7 +477,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         />
       </div>
       <Slider
-        label={shock.jobLoss ? "EI pays" : "Income after shock"}
+        label={shock.jobLoss ? "Income replacement rate (EI)" : "Income remaining"}
         value={shock.incomePct}
         min={0}
         max={1}
@@ -486,7 +486,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={`${Math.round(shock.incomePct * 100)}% · ${money(income)}/mo`}
       />
       <Slider
-        label="Bills / rent"
+        label="Increase in bills / rent"
         value={shock.billsPct}
         min={0}
         max={0.5}
@@ -495,7 +495,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={`+${Math.round(shock.billsPct * 100)}% · +${money(shock.billsPct * m.H)}/mo`}
       />
       <Slider
-        label="Extra per month"
+        label="Other added monthly costs"
         value={shock.extraMonthly}
         min={0}
         max={3000}
@@ -504,7 +504,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={`+${money(shock.extraMonthly)}/mo`}
       />
       <Slider
-        label="One-off (× spending)"
+        label="One-time cost (months of spending)"
         value={shock.oneOffMult}
         min={0}
         max={3}
@@ -513,7 +513,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={`${shock.oneOffMult}× · ${money(shock.oneOffMult * m.S)}`}
       />
       <Slider
-        label="One-off ($)"
+        label="Additional one-time cost ($)"
         value={shock.oneOffAbs}
         min={0}
         max={20000}
@@ -522,7 +522,7 @@ function ShockSliders({ m, shock, setShock, income }: { m: Metrics; shock: Shock
         display={money(shock.oneOffAbs)}
       />
       <Slider
-        label="Lasts"
+        label="Scenario duration"
         value={shock.durationMonths}
         min={1}
         max={24}

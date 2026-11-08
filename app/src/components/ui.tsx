@@ -108,14 +108,18 @@ export function Slider({
   display: string;
   hint?: string;
 }) {
+  const id = useId();
   const fill = ((value - min) / (max - min)) * 100;
   return (
-    <label className="block">
+    <div className="block">
       <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-        <span className="text-ink-2">{label}</span>
+        <span className="flex items-center gap-1.5 text-ink-2">
+          <label htmlFor={id}>{label}</label>
+        </span>
         <span className="tnum font-semibold">{display}</span>
       </div>
       <input
+        id={id}
         type="range"
         min={min}
         max={max}
@@ -126,7 +130,7 @@ export function Slider({
         aria-label={label}
       />
       {hint && <div className="mt-1 text-xs text-muted">{hint}</div>}
-    </label>
+    </div>
   );
 }
 
