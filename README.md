@@ -7,7 +7,7 @@ Pick any `account_id` and the engine will:
 1. **Know the customer:** income (I), fixed costs (F), spending (S), savings buffer (B), household bills (H), loan payment (P) and months of runway, plus charts of their real history.
 2. **Take a shock:** a job loss with EI, a bills or rent increase, a surprise repair, or any mix. Use sliders, one-click presets, or type the judge's twist card in plain English. Everything recalculates instantly, with a "show the math" panel.
 3. **Make a plan:** three cards that answer "if the shock hits, how long does their money last?": **Do nothing**, **Short term** (pause the loan, cut flexible spending back to the customer's own lean month, capped at 50%) and **Long term** (build the emergency fund first, then the shock hits). Every card ends in the same number: months of runway.
-4. **Ask about this plan:** a small chatbot (five preset questions) explains the plan with sources: why 6 months, why this cut, how long a layoff could last (Statistics Canada, EI Act Schedule I, CIRO, canada.ca). **Every number comes from the rules engine; Gemini only rewords the sentence**, and its reply is rejected if it contains a digit or drops a number. If Gemini or the database is down, the plain template answers.
+4. **Ask about this plan:** a chatbot you can type to (or tap one of five preset questions) explains the plan with sources: why 6 months, why this cut, how long a layoff could last (Statistics Canada, EI Act Schedule I, CIRO, canada.ca). **Every number comes from the rules engine; Gemini only rewords the sentence**, and its reply is rejected if it contains a digit or drops a number. If Gemini or the database is down, the plain template answers.
 
 ## Biggest finding
 

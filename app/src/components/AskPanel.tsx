@@ -50,7 +50,12 @@ export function AskPanel({ m, shock, mode }: { m: Metrics; shock: Shock; mode: M
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
   }, [msgs]);
 
-  const ask = async (id: QuestionId, label: string) => {
+  const [draft, setDraft] = useState("");
+  const asText = (x: Msg) => ("segments" in x ? x.segments.map((p) => ("num" in p ? p.num : p.text)).join("") : "text" in x ? x.text : "");
+
+  /** A preset chip sends its id; typed text sends the words plus the last few turns, so follow-ups make sense. */
+  const ask = async (label: string, body: { q: QuestionId } | { text: string }) => {
+    const history = msgs.filter((x) => !("pending" in x)).slice(-6).map((x) => ({ role: x.role, text: asText(x) }));
     const mine = ++run.current;
     setMsgs((x) => [...x.filter((y) => !("pending" in y)), { role: "me", text: label }, { role: "bot", pending: true }]);
     let reply: Msg = { role: "bot", text: "Sorry, I couldn't answer that just now. Please try again." };
@@ -58,7 +63,7 @@ export function AskPanel({ m, shock, mode }: { m: Metrics; shock: Shock; mode: M
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: m.id, shock, mode, q: id }),
+        body: JSON.stringify({ id: m.id, shock, mode, ...body, ...("text" in body ? { history } : {}) }),
       });
       if (res.ok) {
         const data = (await res.json()) as { segments: Segment[]; sources: Source[] };
@@ -161,7 +166,7 @@ export function AskPanel({ m, shock, mode }: { m: Metrics; shock: Shock; mode: M
                 <button
                   key={q.id}
                   type="button"
-                  onClick={() => ask(q.id, label)}
+                  onClick={() => ask(label, { q: q.id })}
                   className="rounded-full border-[1.5px] border-line bg-surface px-[11px] py-1.5 text-[12.5px] font-semibold text-ink-2 hover:border-accent"
                 >
                   {label}
@@ -169,6 +174,28 @@ export function AskPanel({ m, shock, mode }: { m: Metrics; shock: Shock; mode: M
               );
             })}
           </div>
+          <form
+            className="flex gap-2 border-t border-line px-3 pt-2.5 pb-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const t = draft.trim();
+              if (!t) return;
+              setDraft("");
+              ask(t, { text: t });
+            }}
+          >
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              maxLength={300}
+              placeholder="Ask why…"
+              autoComplete="off"
+              className="min-w-0 flex-1 rounded-full border-[1.5px] border-line bg-surface px-3.5 py-2 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
+            />
+            <button type="submit" className="rounded-full bg-accent px-4 font-bold text-white">
+              Send
+            </button>
+          </form>
         </div>
       )}
     </>,
