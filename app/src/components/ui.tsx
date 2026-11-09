@@ -89,6 +89,76 @@ export function Segmented<T extends string>({
   );
 }
 
+export interface FieldFormat {
+  /** display value = slider value × scale (e.g. 100 to show 0.15 as 15) */
+  scale?: number;
+  decimals?: number;
+  prefix?: string;
+  suffix?: string;
+}
+
+/** Number box that stays in sync with a slider: typing moves the slider, dragging updates the box. */
+export function NumberField({
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  decimals = 0,
+  prefix,
+  suffix,
+  label,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step: number;
+  decimals?: number;
+  prefix?: string;
+  suffix?: string;
+  label: string;
+}) {
+  const [draft, setDraft] = useState<string | null>(null); // null = not being edited
+  const factor = 10 ** decimals;
+  const clamp = (n: number) => Math.min(max, Math.max(min, Math.round(n * factor) / factor));
+  const fmt = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: decimals });
+  const parse = (s: string) => (s.trim() === "" ? NaN : Number(s.replace(/[,\s$%×+]/g, "")));
+  return (
+    <span className="flex items-center gap-1 rounded-lg border border-line bg-surface-2/60 px-2 py-px text-sm focus-within:border-accent focus-within:bg-surface">
+      {prefix && <span className="text-muted">{prefix}</span>}
+      <input
+        type="text"
+        inputMode="decimal"
+        aria-label={`${label} (type a value)`}
+        value={draft ?? fmt(clamp(value))}
+        onFocus={(e) => {
+          setDraft(fmt(clamp(value)));
+          e.currentTarget.select();
+        }}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          const n = parse(e.target.value);
+          if (Number.isFinite(n)) onChange(clamp(n));
+        }}
+        onBlur={() => setDraft(null)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            e.preventDefault();
+            const dir = e.key === "ArrowUp" ? 1 : -1;
+            const next = clamp(clamp(value) + dir * step * (e.shiftKey ? 10 : 1));
+            onChange(next);
+            setDraft(fmt(next));
+          }
+        }}
+        className="tnum w-[4.5rem] bg-transparent text-right font-semibold outline-none"
+      />
+      {suffix && <span className="text-muted">{suffix}</span>}
+    </span>
+  );
+}
+
 /** Accessible tab strip (role=tablist, arrow keys move between tabs). Pair with role="tabpanel" content. */
 export function TabBar<T extends string>({
   value,
@@ -150,7 +220,12 @@ export function Slider({
   step,
   onChange,
   display,
+  displayTitle,
   hint,
+  field,
+  openEnded,
+  hardMax,
+  curve,
 }: {
   label: string;
   value: number;
@@ -158,28 +233,67 @@ export function Slider({
   max: number;
   step: number;
   onChange: (v: number) => void;
-  display: string;
+  /** small note shown beside the number box (e.g. what the setting works out to) */
+  display?: string;
+  /** full text of the note, shown on hover when the note is too long to fit */
+  displayTitle?: string;
   hint?: string;
+  field?: FieldFormat;
+  /** the box accepts values above the slider's end (up to hardMax); the thumb just stays at the end */
+  openEnded?: boolean;
+  hardMax?: number;
+  /** >1 gives the low end of the slider more room (value = max × position^curve); the box stays exact */
+  curve?: number;
 }) {
-  const fill = ((value - min) / (max - min)) * 100;
+  const id = useId();
+  const share = max > min ? Math.min(1, Math.max(0, (value - min) / (max - min))) : 0;
+  const pos = curve ? Math.pow(share, 1 / curve) : share; // thumb position 0..1
+  const fill = pos * 100;
+  const scale = field?.scale ?? 1;
+  const decimals = field?.decimals ?? 0;
   return (
-    <label className="block">
-      <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-        <span className="text-ink-2">{label}</span>
-        <span className="tnum font-semibold">{display}</span>
+    <div className="block">
+      <div className="mb-1 flex items-center justify-between gap-3 text-sm">
+        <label htmlFor={id} className="shrink-0 whitespace-nowrap text-ink-2">
+          {label}
+        </label>
+        <span className="flex min-w-0 items-center justify-end gap-2">
+          {display && (
+            <span title={displayTitle ?? display} className="tnum min-w-0 truncate whitespace-nowrap text-xs text-muted">
+              {display}
+            </span>
+          )}
+          <NumberField
+            label={label}
+            value={value * scale}
+            min={min * scale}
+            max={(openEnded ? (hardMax ?? Infinity) : max) * scale}
+            step={step * scale}
+            decimals={decimals}
+            prefix={field?.prefix}
+            suffix={field?.suffix}
+            onChange={(v) => onChange(v / scale)}
+          />
+        </span>
       </div>
       <input
+        id={id}
         type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        min={curve ? 0 : min}
+        max={curve ? 1 : max}
+        step={curve ? 0.001 : step}
+        value={curve ? pos : Math.min(max, Math.max(min, value))}
+        onChange={(e) => {
+          const x = Number(e.target.value);
+          if (!curve) return onChange(x);
+          const raw = min + (max - min) * Math.pow(x, curve);
+          onChange(Math.round(raw / step) * step);
+        }}
         style={{ ["--fill" as string]: `${fill}%` }}
         aria-label={label}
       />
       {hint && <div className="mt-1 text-xs text-muted">{hint}</div>}
-    </label>
+    </div>
   );
 }
 

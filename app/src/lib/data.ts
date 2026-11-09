@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { decodeMetrics, type Metrics, type MetricsFile } from "./engine";
+import type { ClientMap, ClientRole } from "./ids";
 
 export interface AccountDetail {
   id: number;
@@ -84,6 +85,7 @@ export interface Findings {
 
 let metricsP: Promise<Map<number, Metrics>> | null = null;
 let findingsP: Promise<Findings> | null = null;
+let clientsP: Promise<ClientMap> | null = null;
 const detailCache = new Map<number, Promise<AccountDetail | null>>();
 
 /** The API (Tiger Data) first. If it is down or not configured, the identical JSON committed in public/data. */
@@ -115,6 +117,14 @@ export function loadMetrics() {
       throw e;
     });
   return metricsP;
+}
+/** client_id → the account that person belongs to. Falls back to an empty map so account IDs still work. */
+export function loadClientMap() {
+  clientsP ??= fetch("/data/clients.json")
+    .then((r) => r.json() as Promise<Record<string, [number, ClientRole]>>)
+    .then((o) => new Map(Object.entries(o).map(([id, [account, role]]) => [Number(id), { account, role }] as const)) as ClientMap)
+    .catch(() => new Map() as ClientMap);
+  return clientsP;
 }
 export function loadFindings() {
   findingsP ??= fetchJson<Findings>("/api/findings", "/data/findings.json")

@@ -15,6 +15,11 @@ const SOURCES = [
   ["PKDD'99 Discovery Challenge Financial dataset (CTU Prague Relational Dataset Repository)", "https://relational.fel.cvut.cz/dataset/Financial"],
   ["Government of Canada: EI regular benefits, how much you could receive (2026: 55%, max $729/week)", "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html"],
   ["Government of Canada: EI regular benefits overview", "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit.html"],
+  ["Financial Consumer Agency of Canada: Setting up an emergency fund", "https://www.canada.ca/en/financial-consumer-agency/services/savings-investments/setting-up-emergency-funds.html"],
+  ["Financial Consumer Agency of Canada: Losing your job", "https://www.canada.ca/en/financial-consumer-agency/services/losing-job.html"],
+  ["Tangerine: How to build an emergency fund", "https://www.tangerine.ca/en/thejuice/save/how-to-build-an-emergency-fund-during-a-time-of-high-inflation"],
+  ["Statistics Canada: Consumer Price Index, December 2025 (rent +4.9% year over year)", "https://www150.statcan.gc.ca/n1/daily-quotidien/260119/dq260119b-eng.htm"],
+  ["RBC Economics: Canada's population downturn, rising supply to keep apartment rents in check", "https://www.rbc.com/en/economics/canadian-analysis/featured-analysis/insights/canadas-population-downturn-rising-supply-to-keep-apartment-rents-in-check/"],
 ];
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -77,6 +82,12 @@ else:                 runway = min(buffer_left / gap, 120), rounded to 1 decimal
             income (median of money_in − pension_in) and keeps the median pension.
           </li>
           <li>Judge mode is the default and matches the brief exactly. Both numbers are always on screen.</li>
+          <li>
+            <b className="text-ink">Rent and bills slider range.</b> It goes up to 100% of the customer&apos;s usual bills (bills doubling). Typical increases are far
+            smaller: Statistics Canada&apos;s rent index rose 4.3% to 5.2% a year through 2025, and RBC found units that changed tenants rose about 8.7%. In this
+            dataset the median year-over-year change in household bills is 0%, but the top 1% of changes are +100% or more. The slider gives the small, realistic
+            increases more room, and you can type any amount, even above the slider&apos;s end.
+          </li>
         </ul>
       </Section>
     ),
@@ -84,16 +95,28 @@ else:                 runway = min(buffer_left / gap, 120), rounded to 1 decimal
   {
     label: "Plans",
     body: (
-      <Section title="4. Plans">
-        <ul className="mt-3 list-disc space-y-3 pl-5 text-ink-2">
+      <Section title="4. Recovery plan">
+        <ul className="mt-3 list-disc space-y-2.5 pl-5 text-ink-2">
           <li>
-            <b className="text-ink">Goal plan.</b> Emergency-fund target = the larger of (a) 6 × the monthly gap after a job loss with EI, so the buffer survives
-            a full 6-month EI claim, and (b) 3 × fixed costs. The customer saves a chosen share of their monthly surplus (I − S). If they have no surplus, we
-            size the cut to flexible spending that creates one.
+            <b className="text-ink">What it shows.</b> A month-by-month projection of one account: first the what-if (Phase 1), then the rebuild (Phase 2). Money available never goes below $0.
+            Anything the account can&apos;t cover is shown separately as &quot;uncovered&quot;, since it would have to be borrowed, delayed or cut.
           </li>
           <li>
-            <b className="text-ink">Backup plan.</b> Ordered moves on the day the shock hits: file for EI, trim flexible spending (card spending, cash withdrawals,
-            unlabelled transfers out) by 10%, ask to defer the loan payment, then survival mode (25% cut). Cuts apply only while the shock lasts. Each step shows the runway it adds.
+            <b className="text-ink">The plans.</b> Spend 10%, 15% or 25% less on card, cash and other transfers (treated as spending that could be trimmed, which is an assumption), and
+            optionally ask the lender to defer a loan payment. A deferral is up to the lender. We assume the missed payments are repaid over 12 months, with no interest added.
+          </li>
+          <li>
+            <b className="text-ink">Recovered means three things.</b> The monthly shortfall ends; anything uncovered is cleared and the account is back above one month of essentials; and the
+            buffer reaches 3 months (or 6, as a stretch) of essentials we can see: bills, insurance and loan payments labelled in the account, or all spending if none are labelled.
+            The 3 to 6 month range follows the Financial Consumer Agency of Canada and Tangerine.
+          </li>
+          <li>
+            <b className="text-ink">The rebuild.</b> After the what-if, income and spending return to normal and any cuts stop. Half of each month&apos;s leftover goes first to anything uncovered,
+            then to the buffer. Nothing is saved in a month with a shortfall, and no dollar is counted twice.
+          </li>
+          <li>
+            <b className="text-ink">What the dates mean.</b> They are projected from the account&apos;s records, not progress so far, and rounded on purpose. The what-if switches show how far they
+            move. They are illustrative, not statistical ranges.
           </li>
         </ul>
       </Section>
@@ -150,8 +173,21 @@ export function MethodTabs() {
           </button>
         ))}
       </div>
-      <div role="tabpanel" className="mt-6 max-w-5xl">
-        {TABS[i].body}
+      {/* All four panels sit in the same grid cell and only the selected one is visible, so the area is always as tall
+          as the tallest tab (at any screen width). The page never resizes or jumps when you switch tabs. */}
+      <div className="mt-6 grid max-w-5xl">
+        {TABS.map((t, n) => (
+          <div
+            key={t.label}
+            role="tabpanel"
+            aria-label={t.label}
+            aria-hidden={i !== n}
+            inert={i !== n}
+            className={`[grid-area:1/1] ${i === n ? "" : "invisible"}`}
+          >
+            {t.body}
+          </div>
+        ))}
       </div>
     </div>
   );

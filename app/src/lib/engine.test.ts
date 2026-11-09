@@ -57,3 +57,12 @@ describe("verdict", () => {
     expect(v.moneyNeeded).toBeGreaterThan(0);
   });
 });
+
+describe("lean and unemp metrics", () => {
+  it("are decoded for the demo customers", () => {
+    expect(metrics.get(52783)!.lean).toBeCloseTo(13833.24, 2);
+    expect(metrics.get(76493)!.lean).toBe(0);
+    expect(metrics.get(52783)!.unemp).toBeCloseTo(2.89, 2);
+    expect(metrics.get(43402)!.unemp).toBeCloseTo(7.07, 2);
+  });
+});

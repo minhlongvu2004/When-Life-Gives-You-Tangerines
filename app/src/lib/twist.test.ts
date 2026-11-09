@@ -27,6 +27,11 @@ describe("parseTwist", () => {
     const { shock } = parseTwist("Job loss with EI at 50% for nine months.");
     expect(shock).toMatchObject({ incomePct: 0.5, durationMonths: 9 });
   });
+  it("the example shown in the text box: first person, rent in dollars", () => {
+    const { shock, understood } = parseTwist("I lose my job (EI at 55%) and rent goes up $200 a month");
+    expect(shock).toMatchObject({ jobLoss: true, incomePct: 0.55, extraMonthly: 200, billsPct: 0 });
+    expect(understood.join(" | ")).toMatch(/Job loss.*55%.*EI estimate/);
+  });
   it("pay cut", () => {
     expect(parseTwist("Their hours are cut and income drops 30%.").shock.incomePct).toBeCloseTo(0.7);
   });

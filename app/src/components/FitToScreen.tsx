@@ -38,7 +38,9 @@ export function FitToScreen({ children }: { children: ReactNode }) {
       i.style.zoom = "1";
       const natural = i.offsetHeight; // height at 100%, read synchronously so nothing is painted
       i.style.zoom = prev;
-      const next = natural > 0 ? Math.min(MAX_SCALE, Math.max(MIN_SCALE, (o.clientHeight - 4) / natural)) : 1;
+      // a long page (marked data-scroll-page) is shown at full size and scrolls instead of shrinking
+      const scrolls = !!i.querySelector("[data-scroll-page]");
+      const next = scrolls ? 1 : natural > 0 ? Math.min(MAX_SCALE, Math.max(MIN_SCALE, (o.clientHeight - 6) / natural)) : 1;
       setScale((cur) => (Math.abs(cur - next) < 0.005 ? cur : next));
     };
     const ro = new ResizeObserver(measure);

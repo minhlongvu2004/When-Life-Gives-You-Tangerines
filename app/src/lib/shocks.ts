@@ -150,12 +150,12 @@ export const SHOCK_PRESETS: ShockPreset[] = [
 /** Short plain-English summary, e.g. "Laid off, EI 55% + bills +15%". Empty when nothing changes. */
 export function shockLabel(s: Shock): string {
   const parts: string[] = [];
-  if (s.jobLoss) parts.push(`laid off, EI ${pct(s.incomePct)}`);
-  else if (s.incomePct !== 1) parts.push(`income ${pct(s.incomePct)} of usual`);
-  if (s.billsPct) parts.push(`bills ${s.billsPct > 0 ? "+" : "−"}${pct(Math.abs(s.billsPct))}`);
-  if (s.extraMonthly) parts.push(`+${money(s.extraMonthly)}/mo`);
-  if (s.oneOffMult) parts.push(`${s.oneOffMult === 1 ? "a" : s.oneOffMult + "×"} month of spending one-off`);
-  if (s.oneOffAbs) parts.push(`${money(s.oneOffAbs)} one-off`);
+  if (s.jobLoss) parts.push(`job loss (EI estimate ${pct(s.incomePct)})`);
+  else if (s.incomePct !== 1) parts.push(`income down ${pct(1 - s.incomePct)}`);
+  if (s.billsPct) parts.push(`rent/bills ${s.billsPct > 0 ? "+" : "−"}${pct(Math.abs(s.billsPct))}`);
+  if (s.extraMonthly) parts.push(`+${money(s.extraMonthly)}/month other costs`);
+  if (s.oneOffMult) parts.push(`one-time cost: ${s.oneOffMult === 1 ? "1 month" : s.oneOffMult + " months"} of spending`);
+  if (s.oneOffAbs) parts.push(`one-time ${money(s.oneOffAbs)}`);
   const out = parts.join(" + ");
   return out ? out[0].toUpperCase() + out.slice(1) : "";
 }
@@ -166,7 +166,7 @@ export const sameShock = (a: Shock, b: Shock) =>
   (["incomePct", "billsPct", "extraMonthly", "oneOffMult", "oneOffAbs", "durationMonths"] as const).every((k) => Math.abs(a[k] - b[k]) < 1e-9);
 
 /* ------------------------------------------------------------------ field rules
-   Limits match the server's sanitizeShock() so any shock built here can be explained by /api/plan. */
+   Limits match the server's sanitizeShock() so any shock built here can be answered by /api/ask. */
 
 export type FieldKey = "incomePct" | "billsPct" | "extraMonthly" | "oneOffMult" | "oneOffAbs" | "durationMonths";
 

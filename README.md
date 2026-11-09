@@ -2,7 +2,7 @@
 
 **A financial resilience engine for real bank customers.** Sheridan Datathon 2026, Tangerine track “Resilience Rewired”.
 
-Pick any `account_id` and the engine will:
+Pick any `account_id` (or a `client_id`, which opens that person's account) and the engine will:
 
 1. **Know the customer:** income (I), fixed costs (F), spending (S), savings buffer (B), household bills (H), loan payment (P) and months of runway, plus charts of their real history.
 2. **Take a shock:** a job loss with EI, a bills or rent increase, a surprise repair, or any mix. Use sliders, one-click presets, or type the judge's twist card in plain English. Everything recalculates instantly, with a "show the math" panel.
@@ -29,6 +29,7 @@ Prerequisites: Node 20+ and Python 3.10+ with pandas.
 ```bash
 # 1. (optional) rebuild the data from the raw CSVs. Generated JSON is already committed.
 python pipeline/build_data.py path/to/data      # folder with monthly_summary.csv etc.
+python pipeline/build_client_map.py path/to/data  # client_id -> account lookup (so client IDs work too)
 
 # 2. run the app
 cd app

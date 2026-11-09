@@ -1,32 +1,41 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight, Search, Shuffle, X } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
+import { loadClientMap, loadDetail, loadFindings, loadMetrics, monthRows, usePromise, type AccountDetail } from "@/lib/data";
+import { parseId, resolveId, type ClientRole, type Resolved } from "@/lib/ids";
 import { NO_SHOCK, type Mode, type Shock } from "@/lib/engine";
-import { dataAsOf } from "@/lib/whatif/scenarios";
-import { StepCustomer, StepPlan, StepShock, type Peers } from "./guided";
+import { effectiveShock } from "@/lib/planCards";
+import { AskPanel } from "./AskPanel";
+import { StepCustomer, StepShock, type Peers } from "./guided";
+import { StepPlan } from "./RecoveryPlan";
+import { StepBoundary } from "./StepBoundary";
 
 const FIFTHS = ["lowest", "low", "middle", "high", "highest"];
-const STEPS = ["Customer", "Shock", "Plan"] as const;
+const STEPS = ["Customer", "What if?", "Recovery Plan"] as const;
 
 export function Engine() {
   const metrics = usePromise(loadMetrics, []);
   const findings = usePromise(loadFindings, []);
+  const clients = usePromise(loadClientMap, []);
+  const [via, setVia] = useState<{ client: number; role: ClientRole } | null>(null);
   const [id, setId] = useState<number | null>(null);
   const [step, setStep] = useState(0);
   const [mode, setMode] = useState<Mode>("judge");
   const [shock, setShock] = useState<Shock>(NO_SHOCK);
   const [start, setStart] = useState<string | null>(null); // YYYY-MM the shock starts, null = the month after the data ends
-  const now = useMemo(() => dataAsOf(), []);
   const [detail, setDetail] = useState<AccountDetail | null | undefined>(undefined);
 
   const all = useMemo(() => (metrics ? [...metrics.values()] : []), [metrics]);
   const sortedI = useMemo(() => all.map((x) => x.I).sort((a, b) => a - b), [all]);
 
-  const open = useCallback((n: number) => {
+  const resolve = useCallback((n: number | null) => resolveId(n, (x) => !!metrics?.has(x), clients), [metrics, clients]);
+
+  const open = useCallback((r: Resolved) => {
+    const n = r.account;
+    setVia(r.client !== undefined && r.role ? { client: r.client, role: r.role } : null);
     setId(n);
     setStep(0);
     setDetail(undefined);
@@ -37,17 +46,18 @@ export function Engine() {
   }, []);
   const close = () => {
     setId(null);
+    setVia(null);
     const url = new URL(window.location.href);
     url.searchParams.delete("id");
     window.history.replaceState(null, "", url);
   };
 
   useEffect(() => {
-    if (!metrics || id !== null) return;
-    const q = Number(new URLSearchParams(window.location.search).get("id"));
-    if (q && metrics.has(q)) open(q);
+    if (!metrics || !clients || id !== null) return;
+    const r = resolve(parseId(new URLSearchParams(window.location.search).get("id") ?? ""));
+    if (r) open(r);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [metrics]);
+  }, [metrics, clients]);
 
   useEffect(() => {
     if (id === null) return;
@@ -84,7 +94,7 @@ export function Engine() {
 
   if (!m)
     return (
-      <Landing ready={!!metrics} featured={findings?.featured ?? []} onOpen={(n) => metrics?.has(n) && open(n)} has={(n) => !!metrics?.has(n)} all={all} />
+      <Landing ready={!!metrics && !!clients} featured={findings?.featured ?? []} onOpen={open} resolve={resolve} all={all} />
     );
 
   // owner's gender and age (clients.csv via dispositions.csv), branch region (accounts.csv → districts.csv). No names exist in the data.
@@ -100,6 +110,12 @@ export function Engine() {
           <span className="text-sm">
             <span className="tnum font-semibold">Account #{m.id}</span>
             {who && <span className="hidden text-ink-2 sm:inline"> · {who}</span>}
+            {via && (
+              <span className="hidden text-muted md:inline">
+                {" "}
+                · via client {via.client} ({via.role})
+              </span>
+            )}
           </span>
           <button
             onClick={close}
@@ -115,7 +131,7 @@ export function Engine() {
               key={s}
               onClick={() => setStep(i)}
               aria-current={step === i ? "step" : undefined}
-              className={`relative flex items-center gap-2 rounded-full px-4 py-1 text-sm font-medium transition-colors ${step === i ? "text-page" : "text-ink-2 hover:text-ink"}`}
+              className={`relative flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors sm:gap-2 sm:px-4 sm:text-sm ${step === i ? "text-page" : "text-ink-2 hover:text-ink"}`}
             >
               {step === i && (
                 <motion.span
@@ -131,31 +147,24 @@ export function Engine() {
         </nav>
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${m.id}-${step}`}
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className={`flex flex-col justify-center ${step === 1 ? "lg:min-h-0 lg:flex-1" : "pb-2"}`}
-        >
+      {/* No exit animation on purpose: waiting for the old step to finish leaving can freeze on a blank page if anything
+          inside it never finishes animating. The new step simply fades in. */}
+      <motion.div
+        key={`${m.id}-${step}`}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className={`flex flex-col justify-center ${step === 1 ? "lg:min-h-0 lg:flex-1" : "pb-2"}`}
+      >
+        <StepBoundary key={`${m.id}-${step}`} label={STEPS[step]} onBack={() => setStep(0)}>
           {step === 0 && <StepCustomer m={m} rows={rows} peers={peers} mode={mode} onNext={() => setStep(1)} historyMissing={detail === null} />}
-          {step === 1 && <StepShock
-              m={m}
-              mode={mode}
-              setMode={setMode}
-              shock={shock}
-              setShock={setShock}
-              start={start}
-              setStart={setStart}
-              now={now}
-              all={all}
-              onNext={() => setStep(2)}
-            />}
-          {step === 2 && <StepPlan m={m} mode={mode} shock={shock} onRestart={close} />}
-        </motion.div>
-      </AnimatePresence>
+          {step === 1 && (
+            <StepShock m={m} mode={mode} setMode={setMode} shock={shock} setShock={setShock} start={start} setStart={setStart} all={all} onNext={() => setStep(2)} />
+          )}
+          {step === 2 && <StepPlan m={m} mode={mode} shock={shock} rows={rows} onRestart={close} />}
+        </StepBoundary>
+      </motion.div>
+      {step === 2 && <AskPanel m={m} shock={effectiveShock(shock)} mode={mode} />}
     </div>
   );
 }
@@ -164,29 +173,31 @@ function Landing({
   ready,
   featured,
   onOpen,
-  has,
+  resolve,
   all,
 }: {
   ready: boolean;
   featured: { id: number; label: string }[];
-  onOpen: (n: number) => void;
-  has: (n: number) => boolean;
+  onOpen: (r: Resolved) => void;
+  resolve: (n: number | null) => Resolved | null;
   all: { id: number }[];
 }) {
   const [v, setV] = useState("");
   const [err, setErr] = useState("");
   const ref = useRef<HTMLInputElement>(null);
   const go = (raw: string) => {
-    const n = Number(raw.trim());
-    if (!/^\d{1,9}$/.test(raw.trim())) {
-      setErr("Account IDs are numbers only, like 52783.");
+    const text = raw.trim();
+    const digits = text.replace(/\D/g, "");
+    if (/[A-Za-z]/.test(text) || digits === "" || digits.length > 9) {
+      setErr("IDs are numbers only, like 52783 (account) or 6856613 (client).");
       return;
     }
-    if (!has(n)) {
-      setErr(`No account ${raw.trim()} in accounts.csv. Try one of the examples below.`);
+    const r = resolve(parseId(text));
+    if (!r) {
+      setErr(`No account or client ${text} in accounts.csv or clients.csv. Try one of the examples below.`);
       return;
     }
-    onOpen(n);
+    onOpen(r);
   };
   return (
     <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -217,7 +228,7 @@ function Landing({
               setV(e.target.value);
               setErr("");
             }}
-            placeholder={ready ? "Enter an account ID" : "Loading…"}
+            placeholder={ready ? "Enter an account or client ID" : "Loading…"}
             className="tnum min-w-0 flex-1 bg-transparent py-2 text-lg outline-none placeholder:text-muted"
             aria-label="Account ID"
           />
@@ -233,14 +244,14 @@ function Landing({
           {featured.slice(0, 3).map((f) => (
             <button
               key={f.id}
-              onClick={() => onOpen(f.id)}
+              onClick={() => onOpen({ account: f.id })}
               className="btn btn-secondary rounded-full px-3.5 py-1.5"
             >
               {f.label}
             </button>
           ))}
           <button
-            onClick={() => all.length && onOpen(all[Math.floor(Math.random() * all.length)].id)}
+            onClick={() => all.length && onOpen({ account: all[Math.floor(Math.random() * all.length)].id })}
             className="btn btn-outline rounded-full px-3 py-1.5"
           >
             <Shuffle className="size-3.5" aria-hidden /> Surprise me

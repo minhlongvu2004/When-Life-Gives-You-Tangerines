@@ -24,32 +24,32 @@ export function parseTwist(text: string): ParsedTwist {
   let m: RegExpMatchArray | null;
 
   // --- income ---
-  const jobLoss = /(laid off|lay-?off|lose[s]? (?:their |his |her |a |the )?job|job loss|lost (?:their |his |her |a )?job|unemploy|fired|let go|redundan)/.test(t);
+  const jobLoss = /(laid off|lay-?off|lose[s]? (?:their |his |her |my |a |the )?job|job loss|lost (?:their |his |her |a )?job|unemploy|fired|let go|redundan)/.test(t);
   if (jobLoss) {
     s.jobLoss = true;
     s.incomePct = 0.55;
     if ((m = t.match(/ei[^.%]*?(\d+(?:\.\d+)?)\s*%/)) || (m = t.match(/(\d+(?:\.\d+)?)\s*%\s*of (?:their |his |her )?(?:usual |normal |typical )?(?:income|pay|salary|earnings)/)))
       s.incomePct = Number(m[1]) / 100;
-    understood.push(`Job loss → income ${Math.round(s.incomePct * 100)}% of usual (EI)`);
+    understood.push(`Job loss: income ${Math.round(s.incomePct * 100)}% of usual (EI estimate)`);
     if ((m = t.match(new RegExp(String.raw`(?:for|lasts?|over)\s+${NUM}\s+months?`))) || (m = t.match(new RegExp(String.raw`${NUM}[- ]months? (?:of )?(?:ei|benefits)`)))) {
       s.durationMonths = num(m[1]);
-      understood.push(`Shock lasts ${s.durationMonths} months`);
+      understood.push(`Lasts ${s.durationMonths} months`);
     }
   } else if ((m = t.match(/(?:income|pay|salary|hours|earnings)[^.%]*?(?:cut|drop|fall|reduced|down|lower)[^.%]*?(\d+(?:\.\d+)?)\s*%/)) || (m = t.match(/(\d+(?:\.\d+)?)\s*%\s*(?:pay|income|salary) cut/))) {
     s.incomePct = 1 - Number(m[1]) / 100;
-    understood.push(`Income cut ${m[1]}% → ${Math.round(s.incomePct * 100)}% of usual`);
+    understood.push(`Income down ${m[1]}% (${Math.round(s.incomePct * 100)}% still coming in)`);
   }
 
   // --- bills / rent increases ---
   if ((m = t.match(/(?:household bills|bills|rent|utilit(?:y|ies)|hydro|heating|mortgage)[^.%$]*?(?:up|rise|rises|increase|increases|go up|goes up|higher|jump|jumps|climb)[^.%$]*?(?:by )?(\d+(?:\.\d+)?)\s*%/)) ||
       (m = t.match(/(\d+(?:\.\d+)?)\s*%\s*(?:increase|rise|jump|more)[^.]*?(?:bills|rent|utilit)/))) {
     s.billsPct = Number(m[1]) / 100;
-    understood.push(`Household bills +${m[1]}%`);
+    understood.push(`Rent/bills +${m[1]}%`);
   }
   if ((m = t.match(/(?:rent|bills|mortgage|childcare|daycare|costs?)[^.$]*?(?:up|rise|rises|increase|increases|go up|goes up|jump|jumps|extra|more)[^.$]*?\$\s?(\d[\d,]*(?:\.\d+)?)/)) ||
       (m = t.match(/\$\s?(\d[\d,]*(?:\.\d+)?)\s*(?:a|per|\/)\s*month/))) {
     s.extraMonthly = num(m[1]);
-    understood.push(`Extra monthly cost $${s.extraMonthly.toLocaleString()}`);
+    understood.push(`Other monthly cost +$${s.extraMonthly.toLocaleString()}`);
   }
 
   // --- one-off costs ---
@@ -57,10 +57,10 @@ export function parseTwist(text: string): ParsedTwist {
   if (oneOffWord.test(t)) {
     if ((m = t.match(new RegExp(String.raw`${NUM}\s+(?:full\s+)?months?(?:'s|')?\s+(?:worth\s+)?(?:of\s+)?(?:their\s+|his\s+|her\s+)?(?:typical\s+|usual\s+|normal\s+|average\s+)?(?:spending|expenses|costs|money out|outgoings)`)))) {
       s.oneOffMult = num(m[1]);
-      understood.push(`One-off cost = ${s.oneOffMult}× typical monthly spending`);
+      understood.push(`One-time cost: ${s.oneOffMult === 1 ? "1 month" : `${s.oneOffMult} months`} of spending`);
     } else if ((m = t.match(/(?:repair|furnace|roof|car|bill|costs?|pay|vet|dental|medical|emergency)[^.]*?\$\s?(\d[\d,]*(?:\.\d+)?)\s*(k)?/)) && !/(?:a|per|\/)\s*month/.test(t.slice(t.indexOf(m[0]) + m[0].length, t.indexOf(m[0]) + m[0].length + 12))) {
       s.oneOffAbs = num(m[1]) * (m[2] ? 1000 : 1);
-      understood.push(`One-off cost $${s.oneOffAbs.toLocaleString()}`);
+      understood.push(`One-time cost: $${s.oneOffAbs.toLocaleString()}`);
     }
   }
   return { shock: s, understood };

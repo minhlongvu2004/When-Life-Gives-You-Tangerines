@@ -1,7 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
 export type Theme = "light" | "dark";
 const KEY = "theme";
@@ -31,20 +31,6 @@ function apply(t: Theme, fade: boolean) {
 
 export function ThemeToggle() {
   const theme = useTheme();
-
-  // follow the OS while the user hasn't picked a theme themselves
-  useEffect(() => {
-    const mq = matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => {
-      let saved: string | null = null;
-      try {
-        saved = localStorage.getItem(KEY);
-      } catch {}
-      if (saved !== "light" && saved !== "dark") apply(mq.matches ? "dark" : "light", true);
-    };
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
 
   const next: Theme = theme === "dark" ? "light" : "dark";
   return (

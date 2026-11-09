@@ -28,7 +28,7 @@ GOLDEN_JSON = os.path.join(HERE, "golden.json")
 
 # metrics.json column -> customer_metrics column (quoted where it is mixed case)
 NUMERIC = ["I", "F", "S", "B", "H", "P", "ins", "loanPay", "disc", "card", "cash",
-           "xfer", "fees", "pension", "nonPensionI", "incomeCV", "months"]
+           "xfer", "fees", "pension", "nonPensionI", "lean", "unemp", "incomeCV", "months"]
 TEXT = ["region"]
 MAX_SHOWN = 10
 
